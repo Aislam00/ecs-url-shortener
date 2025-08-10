@@ -199,3 +199,39 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "github_actions_terraform" {
+  name_prefix = "${var.name_prefix}-github-terraform-"
+  role        = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/envs/dev/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = "arn:aws:dynamodb:eu-west-2:475641479654:table/ecs-url-shortener-global-terraform-lock"
+      }
+    ]
+  })
+}
