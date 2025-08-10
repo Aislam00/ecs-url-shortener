@@ -26,16 +26,42 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Plan
+        env:
+          TF_VAR_aws_region: "eu-west-2"
+          TF_VAR_aws_account_id: "475641479654"
+          TF_VAR_project_name: "ecs-url-shortener"
+          TF_VAR_environment: "dev"
+          TF_VAR_vpc_cidr: "10.0.0.0/16"
+          TF_VAR_availability_zones: '["eu-west-2a", "eu-west-2b"]'
+          TF_VAR_private_subnet_cidrs: '["10.0.1.0/24", "10.0.2.0/24"]'
+          TF_VAR_public_subnet_cidrs: '["10.0.101.0/24", "10.0.102.0/24"]'
+          TF_VAR_container_port: "8080"
+          TF_VAR_health_check_path: "/healthz"
+          TF_VAR_github_repo: "Aislam00/ecs-url-shortener"
+          TF_VAR_tags: '{"Project":"ecs-url-shortener","Environment":"dev","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
         run: |
           cd infra/envs/dev
           terraform init
-          terraform plan -var-file="terraform.tfvars"
+          terraform plan
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
+        env:
+          TF_VAR_aws_region: "eu-west-2"
+          TF_VAR_aws_account_id: "475641479654"
+          TF_VAR_project_name: "ecs-url-shortener"
+          TF_VAR_environment: "dev"
+          TF_VAR_vpc_cidr: "10.0.0.0/16"
+          TF_VAR_availability_zones: '["eu-west-2a", "eu-west-2b"]'
+          TF_VAR_private_subnet_cidrs: '["10.0.1.0/24", "10.0.2.0/24"]'
+          TF_VAR_public_subnet_cidrs: '["10.0.101.0/24", "10.0.102.0/24"]'
+          TF_VAR_container_port: "8080"
+          TF_VAR_health_check_path: "/healthz"
+          TF_VAR_github_repo: "Aislam00/ecs-url-shortener"
+          TF_VAR_tags: '{"Project":"ecs-url-shortener","Environment":"dev","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
         run: |
           cd infra/envs/dev
-          terraform apply -auto-approve -var-file="terraform.tfvars"
+          terraform apply -auto-approve
 
       - name: Update ECS service
         if: github.ref == 'refs/heads/main'
