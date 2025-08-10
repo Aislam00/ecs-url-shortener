@@ -156,6 +156,50 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
   })
 }
 
+resource "aws_iam_role_policy" "github_actions_ecs" {
+  name_prefix = "${var.name_prefix}-github-ecs-"
+  role        = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition",
+          "ecs:UpdateService",
+          "ecs:DescribeTasks"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "codedeploy:CreateDeployment",
+          "codedeploy:GetApplication",
+          "codedeploy:GetDeployment",
+          "codedeploy:GetDeploymentConfig",
+          "codedeploy:RegisterApplicationRevision"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = [
+          aws_iam_role.ecs_task_role.arn,
+          aws_iam_role.ecs_execution_role.arn,
+          aws_iam_role.codedeploy_role.arn
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "github_actions_terraform" {
   name_prefix = "${var.name_prefix}-github-terraform-"
   role        = aws_iam_role.github_actions.id
@@ -201,38 +245,6 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
       {
         Effect = "Allow"
         Action = [
-          "ec2:DescribeVpcs",
-          "ec2:DescribeSubnets",
-          "ec2:DescribeSecurityGroups",
-          "ec2:DescribeVpcEndpoints",
-          "ec2:DescribeAvailabilityZones",
-          "ec2:DescribeInternetGateways",
-          "ec2:DescribeRouteTables",
-          "ec2:DescribeNetworkAcls",
-          "elasticloadbalancing:DescribeLoadBalancers",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeListeners",
-          "wafv2:GetWebACL",
-          "wafv2:ListWebACLs",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "github_actions_read_all" {
-  name_prefix = "${var.name_prefix}-github-read-all-"
-  role        = aws_iam_role.github_actions.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
           "iam:GetRole",
           "iam:GetRolePolicy",
           "iam:ListRolePolicies",
@@ -254,7 +266,8 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "ec2:DescribeRouteTables",
           "ec2:DescribeNetworkAcls",
           "ec2:DescribeVpcAttribute",
-          "ec2:DescribeTags"
+          "ec2:DescribeTags",
+          "ec2:DescribePrefixLists"
         ]
         Resource = "*"
       },
@@ -282,7 +295,8 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
         Action = [
           "dynamodb:DescribeTable",
           "dynamodb:ListTables",
-          "dynamodb:ListTagsOfResource"
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:DescribeContinuousBackups"
         ]
         Resource = "*"
       },
@@ -291,7 +305,8 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
         Action = [
           "logs:DescribeLogGroups",
           "logs:DescribeLogStreams",
-          "logs:ListTagsLogGroup"
+          "logs:ListTagsLogGroup",
+          "logs:ListTagsForResource"
         ]
         Resource = "*"
       },
