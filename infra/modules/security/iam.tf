@@ -333,7 +333,8 @@ resource "aws_iam_role_policy" "github_actions_additional" {
         Effect = "Allow"
         Action = [
           "elasticloadbalancing:DescribeLoadBalancerAttributes",
-          "elasticloadbalancing:DescribeTargetGroupAttributes"
+          "elasticloadbalancing:DescribeTargetGroupAttributes",
+          "elasticloadbalancing:DescribeListenerAttributes"
         ]
         Resource = "*"
       },
@@ -369,6 +370,13 @@ resource "aws_iam_role_policy" "github_actions_additional" {
         Effect = "Allow"
         Action = [
           "ec2:DescribeNetworkInterfaces"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "wafv2:GetWebACLForResource"
         ]
         Resource = "*"
       }
