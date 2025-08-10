@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region eu-west-2 | docker login --username AWS --password-stdin 475641479654.dkr.ecr.eu-west-2.amazonaws.com
+
+      - name: Build Docker image
+        run: |
+          cd app
+          docker build --platform linux/amd64 -t ecs-url-shortener-dev:${{ github.sha }} .
+
+      - name: Tag and push image
+        run: |
+          docker tag ecs-url-shortener-dev:${{ github.sha }} 475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}
+          docker push 475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}

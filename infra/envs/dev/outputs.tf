@@ -37,3 +37,13 @@ output "codedeploy_deployment_group_name" {
   description = "Name of the CodeDeploy deployment group"
   value       = module.container.codedeploy_deployment_group_name
 }
+
+output "vpc_id" {
+  description = "ID of the VPC"
+  value       = module.vpc.vpc_id
+}
+
+output "github_actions_role_arn" {
+  description = "ARN of the GitHub Actions IAM role"
+  value       = module.security.github_actions_role_arn
+}

@@ -1,0 +1,64 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Plan
+        run: |
+          cd infra/envs/dev
+          terraform init
+          terraform plan -var-file="terraform.tfvars"
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd infra/envs/dev
+          terraform apply -auto-approve -var-file="terraform.tfvars"
+
+      - name: Update ECS service
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Update task definition to use new image
+          CURRENT_TASK_DEF=$(aws ecs describe-services --cluster ecs-url-shortener-dev --services ecs-url-shortener-dev --region eu-west-2 --query 'services[0].taskDefinition' --output text)
+          
+          # Get current task definition
+          aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEF --region eu-west-2 --query 'taskDefinition' > task-def.json
+          
+          # Update image in task definition
+          jq --arg IMAGE "475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}" '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-def.json > new-task-def.json
+          
+          # Register new task definition
+          NEW_TASK_DEF=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --region eu-west-2 --query 'taskDefinition.taskDefinitionArn' --output text)
+          
+          # Update service to use new task definition
+          aws ecs update-service --cluster ecs-url-shortener-dev --service ecs-url-shortener-dev --task-definition $NEW_TASK_DEF --region eu-west-2
+
+      - name: Trigger CodeDeploy
+        if: github.ref == 'refs/heads/main'
+        run: |
+          aws deploy create-deployment \
+            --application-name ecs-url-shortener-dev \
+            --deployment-group-name ecs-url-shortener-dev-deployment-group \
+            --region eu-west-2

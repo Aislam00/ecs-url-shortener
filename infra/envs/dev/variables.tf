@@ -52,3 +52,8 @@ variable "health_check_path" {
   description = "Health check endpoint path"
   type        = string
 }
+
+variable "github_repo" {
+  description = "GitHub repository in format owner/repo"
+  type        = string
+}
