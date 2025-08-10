@@ -57,3 +57,15 @@ variable "github_repo" {
   description = "GitHub repository in format owner/repo"
   type        = string
 }
+
+variable "domain_name" {
+  description = "Domain name (leave empty to skip DNS)"
+  type        = string
+  default     = ""
+}
+
+variable "subdomain" {
+  description = "Subdomain for the app"
+  type        = string
+  default     = "url"
+}
