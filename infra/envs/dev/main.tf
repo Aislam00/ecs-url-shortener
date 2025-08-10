@@ -73,9 +73,9 @@ module "container" {
 module "dns" {
   source = "../../modules/dns"
 
-  domain_name   = var.domain_name
-  subdomain     = var.subdomain
-  alb_dns_name  = module.container.alb_dns_name
-  alb_zone_id   = module.container.alb_zone_id
-  tags          = var.tags
+  domain_name  = var.domain_name
+  subdomain    = var.subdomain
+  alb_dns_name = module.container.alb_dns_name
+  alb_zone_id  = module.container.alb_zone_id
+  tags         = var.tags
 }
