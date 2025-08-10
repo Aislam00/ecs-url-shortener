@@ -63,7 +63,7 @@ jobs:
           cd infra/envs/dev
           terraform apply -auto-approve
 
-      - name: Create new task definition with updated image
+      - name: Create new task definition and deploy
         if: github.ref == 'refs/heads/main'
         run: |
           # Get current task definition
@@ -76,12 +76,9 @@ jobs:
           jq --arg IMAGE "475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}" '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-def.json > new-task-def.json
           
           # Register new task definition
-          NEW_REVISION=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --region eu-west-2 --query 'taskDefinition.revision' --output text)
-          echo "NEW_REVISION=$NEW_REVISION" >> $GITHUB_ENV
-
-      - name: Create CodeDeploy deployment
-        if: github.ref == 'refs/heads/main'
-        run: |
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --region eu-west-2 --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "New task definition: $NEW_TASK_DEF_ARN"
+          
           # Create appspec.yaml for CodeDeploy
           cat > appspec.yaml << EOF
           version: 0.0
@@ -89,23 +86,20 @@ jobs:
             - TargetService:
                 Type: AWS::ECS::Service
                 Properties:
-                  TaskDefinition: "arn:aws:ecs:eu-west-2:475641479654:task-definition/ecs-url-shortener-dev:$NEW_REVISION"
+                  TaskDefinition: "$NEW_TASK_DEF_ARN"
                   LoadBalancerInfo:
                     ContainerName: "app"
                     ContainerPort: 8080
           EOF
           
-          # Create deployment
-          aws deploy create-deployment \
+          # Create deployment using simplified approach
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
             --application-name ecs-url-shortener-dev \
             --deployment-group-name ecs-url-shortener-dev-deployment-group \
-            --revision revisionType=AppSpecContent,appSpecContent='{
-              "content": "'$(base64 -w 0 appspec.yaml)'"
-            }' \
-            --region eu-west-2
-
-      - name: Wait for deployment
-        if: github.ref == 'refs/heads/main'
-        run: |
-          echo "Deployment started! Check AWS Console for blue/green deployment progress."
+            --revision "revisionType=AppSpecContent,appSpecContent={content=$(base64 -w 0 appspec.yaml)}" \
+            --region eu-west-2 \
+            --query 'deploymentId' --output text)
+          
+          echo "CodeDeploy deployment started: $DEPLOYMENT_ID"
+          echo "Monitor at: https://eu-west-2.console.aws.amazon.com/codesuite/codedeploy/deployments/$DEPLOYMENT_ID"
           echo "Service URL: http://ecs-url-shortener-dev-1615659732.eu-west-2.elb.amazonaws.com/healthz"
