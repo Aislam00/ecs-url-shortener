@@ -156,50 +156,6 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
   })
 }
 
-resource "aws_iam_role_policy" "github_actions_ecs" {
-  name_prefix = "${var.name_prefix}-github-ecs-"
-  role        = aws_iam_role.github_actions.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition",
-          "ecs:UpdateService",
-          "ecs:DescribeTasks"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "codedeploy:CreateDeployment",
-          "codedeploy:GetApplication",
-          "codedeploy:GetDeployment",
-          "codedeploy:GetDeploymentConfig",
-          "codedeploy:RegisterApplicationRevision"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:PassRole"
-        ]
-        Resource = [
-          aws_iam_role.ecs_task_role.arn,
-          aws_iam_role.ecs_execution_role.arn,
-          aws_iam_role.codedeploy_role.arn
-        ]
-      }
-    ]
-  })
-}
-
 resource "aws_iam_role_policy" "github_actions_terraform" {
   name_prefix = "${var.name_prefix}-github-terraform-"
   role        = aws_iam_role.github_actions.id
@@ -212,25 +168,56 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:GetObjectVersion"
         ]
-        Resource = "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/envs/dev/*"
+        Resource = [
+          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/*"
+        ]
       },
       {
         Effect = "Allow"
         Action = [
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:GetBucketVersioning",
+          "s3:GetBucketLocation"
         ]
-        Resource = "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a"
+        Resource = [
+          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a"
+        ]
       },
       {
         Effect = "Allow"
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable"
         ]
-        Resource = "arn:aws:dynamodb:eu-west-2:475641479654:table/ecs-url-shortener-global-terraform-lock"
+        Resource = [
+          "arn:aws:dynamodb:eu-west-2:475641479654:table/ecs-url-shortener-global-terraform-lock"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeVpcEndpoints",
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeInternetGateways",
+          "ec2:DescribeRouteTables",
+          "ec2:DescribeNetworkAcls",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeListeners",
+          "wafv2:GetWebACL",
+          "wafv2:ListWebACLs",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = "*"
       }
     ]
   })
