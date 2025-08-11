@@ -94,7 +94,8 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
   
   thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1"
+    "6938fd4d98bab03faadb97b34396831e3780aea1",
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
   ]
 
   tags = var.tags
@@ -197,6 +198,26 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
           aws_iam_role.ecs_execution_role.arn,
           aws_iam_role.codedeploy_role.arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:DescribeParameters",
+          "ssm:PutParameter",
+          "ssm:DeleteParameter",
+          "ssm:AddTagsToResource",
+          "ssm:ListTagsForResource"
+        ]
+        Resource = "arn:aws:ssm:eu-west-2:475641479654:parameter/ecs-url-shortener-dev/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:DescribeParameters"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -350,6 +371,26 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "route53:GetChange",
           "route53:ListResourceRecordSets",
           "route53:ChangeResourceRecordSets"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "acm:DescribeCertificate",
+          "acm:ListCertificates",
+          "acm:GetCertificate",
+          "acm:ListTagsForCertificate"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:GetDashboard",
+          "cloudwatch:ListDashboards",
+          "cloudwatch:PutDashboard",
+          "cloudwatch:DeleteDashboard"
         ]
         Resource = "*"
       }
