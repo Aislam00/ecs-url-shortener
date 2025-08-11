@@ -1,7 +1,7 @@
 resource "aws_ecr_repository" "app" {
   name                 = var.name_prefix
   image_tag_mutability = "MUTABLE"
-  force_delete         = true  # Add this line
+  force_delete         = true  
 
   image_scanning_configuration {
     scan_on_push = true
@@ -20,6 +20,7 @@ resource "aws_ecr_lifecycle_policy" "app" {
     rules = [
       {
         rulePriority = 1
+        description  = "Keep last 10 images"
         selection = {
           tagStatus     = "tagged"
           tagPrefixList = ["v"]
