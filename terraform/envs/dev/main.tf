@@ -49,14 +49,6 @@ module "storage" {
   tags        = var.tags
 }
 
-module "certificate" {
-  source = "../../modules/certificate"
-
-  domain_name    = var.domain_name
-  hosted_zone_id = "Z06933453Q1O5OQ901X7P"
-  tags           = var.tags
-}
-
 module "container" {
   source = "../../modules/container"
 
@@ -78,7 +70,7 @@ module "container" {
   ecs_cluster_name       = local.name_prefix
   ecs_service_name       = local.name_prefix
   target_group_name      = "${local.name_prefix}-blue"
-  certificate_arn        = module.certificate.certificate_arn
+  certificate_arn        = "arn:aws:acm:eu-west-2:475641479654:certificate/3b8f0c04-5cc5-44f4-aba9-1688c24f3c05"
   tags                   = var.tags
 }
 
@@ -95,13 +87,13 @@ module "dns" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  name_prefix        = local.name_prefix
-  aws_region         = var.aws_region
-  ecs_service_name   = local.name_prefix
-  ecs_cluster_name   = local.name_prefix
-  alb_name           = module.container.alb_name
-  target_group_name  = module.container.target_group_blue_name
-  tags               = var.tags
+  name_prefix       = local.name_prefix
+  aws_region        = var.aws_region
+  ecs_service_name  = local.name_prefix
+  ecs_cluster_name  = local.name_prefix
+  alb_name          = module.container.alb_name
+  target_group_name = module.container.target_group_blue_name
+  tags              = var.tags
 }
 
 module "parameter_store" {
