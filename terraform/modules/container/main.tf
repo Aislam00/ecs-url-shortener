@@ -20,7 +20,6 @@ resource "aws_ecr_lifecycle_policy" "app" {
     rules = [
       {
         rulePriority = 1
-        description  = "Keep last 10 images"
         selection = {
           tagStatus     = "tagged"
           tagPrefixList = ["v"]
