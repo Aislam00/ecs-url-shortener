@@ -85,6 +85,14 @@ resource "aws_ecs_service" "app" {
     container_port   = var.container_port
   }
 
+  lifecycle {
+    ignore_changes = [
+      task_definition,
+      desired_count,
+      load_balancer
+    ]
+  }
+
   depends_on = [aws_lb_listener.https, aws_lb_listener.http_redirect]
 
   tags = var.tags
