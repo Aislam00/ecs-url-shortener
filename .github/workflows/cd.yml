@@ -40,7 +40,7 @@ jobs:
           TF_VAR_github_repo: "Aislam00/ecs-url-shortener"
           TF_VAR_tags: '{"Project":"ecs-url-shortener","Environment":"dev","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
         run: |
-          cd infra/envs/dev
+          cd terraform/envs/dev
           terraform init
           terraform plan
 
@@ -60,27 +60,23 @@ jobs:
           TF_VAR_github_repo: "Aislam00/ecs-url-shortener"
           TF_VAR_tags: '{"Project":"ecs-url-shortener","Environment":"dev","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
         run: |
-          cd infra/envs/dev
+          cd terraform/envs/dev
           terraform apply -auto-approve
 
-      - name: Create new task definition and deploy
+      - name: Create deployment package and deploy
         if: github.ref == 'refs/heads/main'
         run: |
-          # Get current task definition
           CURRENT_TASK_DEF=$(aws ecs describe-services --cluster ecs-url-shortener-dev --services ecs-url-shortener-dev --region eu-west-2 --query 'services[0].taskDefinition' --output text)
           
-          # Download current task definition
           aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEF --region eu-west-2 --query 'taskDefinition' > task-def.json
           
-          # Update image in task definition
           jq --arg IMAGE "475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}" '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-def.json > new-task-def.json
           
-          # Register new task definition
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --region eu-west-2 --query 'taskDefinition.taskDefinitionArn' --output text)
           echo "New task definition: $NEW_TASK_DEF_ARN"
           
-          # Create appspec.yaml for CodeDeploy
-          cat > appspec.yaml << EOF
+          mkdir deployment-package
+          cat > deployment-package/appspec.yml << EOF
           version: 0.0
           Resources:
             - TargetService:
@@ -92,14 +88,17 @@ jobs:
                     ContainerPort: 8080
           EOF
           
-          # Create deployment using simplified approach
+          cd deployment-package && zip -r ../deployment.zip . && cd ..
+          
+          aws s3 cp deployment.zip s3://ecs-url-shortener-global-terraform-state-11e19a9a/deployments/deployment-${{ github.sha }}.zip
+          
           DEPLOYMENT_ID=$(aws deploy create-deployment \
             --application-name ecs-url-shortener-dev \
             --deployment-group-name ecs-url-shortener-dev-deployment-group \
-            --revision "revisionType=AppSpecContent,appSpecContent={content=$(base64 -w 0 appspec.yaml)}" \
+            --revision "revisionType=S3,s3Location={bucket=ecs-url-shortener-global-terraform-state-11e19a9a,key=deployments/deployment-${{ github.sha }}.zip,bundleType=zip}" \
             --region eu-west-2 \
             --query 'deploymentId' --output text)
           
           echo "CodeDeploy deployment started: $DEPLOYMENT_ID"
           echo "Monitor at: https://eu-west-2.console.aws.amazon.com/codesuite/codedeploy/deployments/$DEPLOYMENT_ID"
-          echo "Service URL: http://ecs-url-shortener-dev-1615659732.eu-west-2.elb.amazonaws.com/healthz"
+          echo "Service URL: https://url.iasolutions.co.uk/healthz"
