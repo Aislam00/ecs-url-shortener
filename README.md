@@ -72,7 +72,7 @@ curl https://url.iasolutions.co.uk/healthz
 
 ## Architecture
 
-![Architecture](screenshots/arc-diagram.png)
+![Architecture](screenshots/arch-diagram.png)
 
 **Core Components:**
 - **ECS Fargate** - Serverless container orchestration
