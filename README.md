@@ -26,7 +26,7 @@ This URL shortener solves the common problem of unwieldy long URLs by providing 
 
 ## Live Demo
 
-https://github.com/user-attachments/assets/c5c3f7fd-37e8-495b-910a-20d04cb7d82d
+https://github.com/user-attachments/assets/b0a4b691-5fe4-49f6-a59f-f93c3e3aaca1
 
 The service accepts any valid URL and returns a shortened version. Click the short link to redirect to the original destination.
 
