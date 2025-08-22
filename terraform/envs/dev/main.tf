@@ -49,29 +49,56 @@ module "storage" {
   tags        = var.tags
 }
 
-module "container" {
-  source = "../../modules/container"
+module "ecr" {
+  source = "../../modules/ecr"
 
-  name_prefix            = local.name_prefix
-  aws_account_id         = var.aws_account_id
-  aws_region             = var.aws_region
-  vpc_id                 = module.vpc.vpc_id
-  private_subnet_ids     = module.vpc.private_subnet_ids
-  public_subnet_ids      = module.vpc.public_subnet_ids
-  alb_security_group_id  = module.security.alb_security_group_id
-  ecs_security_group_id  = module.security.ecs_security_group_id
-  ecs_task_role_arn      = module.security.ecs_task_role_arn
-  ecs_execution_role_arn = module.security.ecs_execution_role_arn
-  codedeploy_role_arn    = module.security.codedeploy_role_arn
-  waf_web_acl_arn        = module.security.waf_web_acl_arn
-  dynamodb_table_name    = module.storage.dynamodb_table_name
-  container_port         = var.container_port
-  health_check_path      = var.health_check_path
-  ecs_cluster_name       = local.name_prefix
-  ecs_service_name       = local.name_prefix
-  target_group_name      = "${local.name_prefix}-blue"
-  certificate_arn        = "arn:aws:acm:eu-west-2:475641479654:certificate/3b8f0c04-5cc5-44f4-aba9-1688c24f3c05"
-  tags                   = var.tags
+  name_prefix = local.name_prefix
+  tags        = var.tags
+}
+
+module "alb" {
+  source = "../../modules/alb"
+
+  name_prefix           = local.name_prefix
+  alb_security_group_id = module.security.alb_security_group_id
+  public_subnet_ids     = module.vpc.public_subnet_ids
+  vpc_id                = module.vpc.vpc_id
+  container_port        = var.container_port
+  health_check_path     = var.health_check_path
+  certificate_arn       = "arn:aws:acm:eu-west-2:475641479654:certificate/3b8f0c04-5cc5-44f4-aba9-1688c24f3c05"
+  waf_web_acl_arn       = module.security.waf_web_acl_arn
+  tags                  = var.tags
+}
+
+module "ecs" {
+  source = "../../modules/ecs"
+
+  name_prefix             = local.name_prefix
+  aws_account_id          = var.aws_account_id
+  aws_region              = var.aws_region
+  container_port          = var.container_port
+  dynamodb_table_name     = module.storage.dynamodb_table_name
+  health_check_path       = var.health_check_path
+  ecs_execution_role_arn  = module.security.ecs_execution_role_arn
+  ecs_task_role_arn       = module.security.ecs_task_role_arn
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  ecs_security_group_id   = module.security.ecs_security_group_id
+  target_group_blue_arn   = module.alb.target_group_blue_arn
+  https_listener_arn      = module.alb.https_listener_arn
+  tags                    = var.tags
+}
+
+module "codedeploy" {
+  source = "../../modules/codedeploy"
+
+  name_prefix              = local.name_prefix
+  codedeploy_role_arn      = module.security.codedeploy_role_arn
+  target_group_blue_name   = module.alb.target_group_blue_name
+  target_group_green_name  = module.alb.target_group_green_name
+  https_listener_arn       = module.alb.https_listener_arn
+  ecs_cluster_name         = module.ecs.ecs_cluster_name
+  ecs_service_name         = module.ecs.ecs_service_name
+  tags                     = var.tags
 }
 
 module "dns" {
@@ -79,8 +106,8 @@ module "dns" {
 
   domain_name  = var.domain_name
   subdomain    = var.subdomain
-  alb_dns_name = module.container.alb_dns_name
-  alb_zone_id  = module.container.alb_zone_id
+  alb_dns_name = module.alb.alb_dns_name
+  alb_zone_id  = module.alb.alb_zone_id
   tags         = var.tags
 }
 
@@ -91,8 +118,8 @@ module "monitoring" {
   aws_region        = var.aws_region
   ecs_service_name  = local.name_prefix
   ecs_cluster_name  = local.name_prefix
-  alb_name          = module.container.alb_name
-  target_group_name = module.container.target_group_blue_name
+  alb_name          = module.alb.alb_name
+  target_group_name = module.alb.target_group_blue_name
   tags              = var.tags
 }
 
