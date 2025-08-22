@@ -123,8 +123,8 @@ module "monitoring" {
   tags              = var.tags
 }
 
-module "parameter_store" {
-  source = "../../modules/parameter-store"
+module "ssm" {
+  source = "../../modules/ssm"
 
   name_prefix         = local.name_prefix
   dynamodb_table_name = module.storage.dynamodb_table_name
