@@ -141,11 +141,6 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:GetAuthorizationToken"
         ]
         Resource = "*"
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.aws_region
-          }
-        }
       },
       {
         Effect = "Allow"
@@ -248,11 +243,6 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "arn:aws:s3:::*terraform-state*/*",
           "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/deployments/*"
         ]
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.aws_region
-          }
-        }
       },
       {
         Effect = "Allow"
@@ -265,11 +255,6 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "arn:aws:s3:::*terraform-state*",
           "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a"
         ]
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.aws_region
-          }
-        }
       },
       {
         Effect = "Allow"
@@ -282,6 +267,26 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
         Resource = [
           "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/*terraform-lock*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:*",
+          "ec2:*",
+          "ecs:*",
+          "elasticloadbalancing:*",
+          "application-autoscaling:*",
+          "logs:*",
+          "sns:*",
+          "kms:*",
+          "ssm:*",
+          "dynamodb:*",
+          "wafv2:*",
+          "codedeploy:*",
+          "cloudwatch:*",
+          "acm:*"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -297,128 +302,15 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
       {
         Effect = "Allow"
         Action = [
-          "kms:DescribeKey",
-          "kms:GetKeyPolicy",
-          "kms:ListAliases",
-          "kms:ListKeys",
-          "kms:GetKeyRotationStatus",
-          "kms:ListResourceTags",
-          "kms:Decrypt",
-          "ec2:DescribeVpcs",
-          "ec2:DescribeSubnets",
-          "ec2:DescribeAddresses",
-          "ec2:DescribeNatGateways",
-          "ec2:DescribeInternetGateways",
-          "ec2:DescribeRouteTables",
-          "ec2:DescribeSecurityGroups",
-          "ec2:DescribeVpcEndpoints",
-          "ec2:DescribeFlowLogs",
-          "ec2:DescribeVpcAttribute",
-          "ec2:DescribeAddressesAttribute",
-          "ec2:DescribePrefixLists",
-          "ec2:DescribeNetworkInterfaces",
-          "ec2:DescribeSecurityGroupRules",
-          "s3:GetBucketVersioning",
-          "s3:GetEncryptionConfiguration",
-          "s3:GetBucketPublicAccessBlock", 
-          "s3:GetLifecycleConfiguration",
-          "s3:GetBucketLogging",
-          "s3:GetBucketPolicy",
-          "s3:GetReplicationConfiguration",
-          "s3:GetBucketNotification",
-          "s3:PutBucketPublicAccessBlock",
-          "s3:DeleteBucketPublicAccessBlock",
-          "s3:PutBucketVersioning",
-          "s3:PutLifecycleConfiguration",
-          "s3:DeleteBucketLifecycle",
-          "s3:PutBucketNotification",
-          "s3:PutBucketLogging",
-          "s3:PutEncryptionConfiguration",
-          "s3:DeleteBucketEncryption",
-          "s3:PutBucketPolicy",
-          "s3:DeleteBucketPolicy",
-          "s3:PutBucketReplication",
-          "s3:DeleteBucketReplication",
-          "s3:PutReplicationConfiguration",
-          "s3:DeleteReplicationConfiguration",
-          "s3:CreateBucket",
-          "s3:DeleteBucket",
-          "sns:GetTopicAttributes",
-          "sns:ListTopics",
-          "sns:ListTagsForResource",
-          "elasticloadbalancing:DescribeLoadBalancers",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:DescribeLoadBalancerAttributes",
-          "elasticloadbalancing:DescribeTargetGroupAttributes",
-          "elasticloadbalancing:DescribeListenerAttributes",
-          "elasticloadbalancing:DescribeTags",
-          "acm:DescribeCertificate",
-          "acm:ListCertificates",
-          "acm:ListTagsForCertificate",
-          "codedeploy:GetApplication",
-          "codedeploy:GetDeploymentGroup",
-          "codedeploy:ListTagsForResource",
-          "ecr:DescribeRepositories",
-          "ecr:ListTagsForResource",
-          "ecr:GetLifecyclePolicy",
-          "logs:DescribeLogGroups",
-          "logs:ListTagsForResource",
-          "cloudwatch:GetDashboard",
-          "ecs:DescribeClusters",
-          "ecs:TagResource",
-          "ecs:UntagResource",
-          "dynamodb:DescribeTable",
-          "dynamodb:DescribeContinuousBackups",
-          "dynamodb:DescribeTimeToLive",
-          "dynamodb:ListTagsOfResource",
-          "wafv2:GetWebACLForResource",
-          "ssm:DescribeParameters",
-          "iam:GetRole",
-          "iam:GetRolePolicy", 
-          "iam:ListRolePolicies",
-          "iam:ListAttachedRolePolicies",
-          "iam:GetOpenIDConnectProvider",
-          "wafv2:GetWebACL",
-          "wafv2:ListTagsForResource"
-        ]
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion" = var.aws_region
-          }
-        }
-      },
-      {
-        Effect = "Allow"
-        Action = [
           "route53:GetHostedZone",
           "route53:ListResourceRecordSets",
           "route53:ListHostedZones",
-          "route53:ListTagsForResource"
+          "route53:ListTagsForResource",
+          "route53:ChangeResourceRecordSets",
+          "route53:GetChange",
+          "route53:ListHostedZonesByName"
         ]
         Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:GetRole",
-          "iam:GetRolePolicy",
-          "iam:ListRolePolicies", 
-          "iam:ListAttachedRolePolicies",
-          "iam:GetOpenIDConnectProvider"
-        ]
-        Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
-        ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "route53:GetChange"
-        ]
-        Resource = "arn:aws:route53:::change/*"
       }
     ]
   })
