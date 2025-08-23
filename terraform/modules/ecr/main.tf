@@ -1,7 +1,23 @@
 resource "aws_kms_key" "ecr" {
   description             = "KMS key for ECR encryption"
   enable_key_rotation     = true
-  tags                    = var.tags
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
+  
+  tags = var.tags
 }
 
 resource "aws_kms_alias" "ecr" {
@@ -12,7 +28,37 @@ resource "aws_kms_alias" "ecr" {
 resource "aws_kms_key" "logs" {
   description             = "KMS key for CloudWatch logs encryption"
   enable_key_rotation     = true
-  tags                    = var.tags
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+  
+  tags = var.tags
 }
 
 resource "aws_kms_alias" "logs" {
@@ -57,7 +103,9 @@ resource "aws_ecr_lifecycle_policy" "app" {
 
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${var.name_prefix}"
-  retention_in_days = 7
+  retention_in_days = 365
   kms_key_id        = aws_kms_key.logs.arn
   tags              = var.tags
 }
+
+data "aws_caller_identity" "current" {}

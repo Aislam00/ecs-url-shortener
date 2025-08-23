@@ -1,3 +1,17 @@
+resource "aws_s3_bucket" "alb_logs" {
+  bucket        = "${var.name_prefix}-alb-logs"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_lb" "main" {
  name               = var.name_prefix
  internal           = false
@@ -5,8 +19,13 @@ resource "aws_lb" "main" {
  security_groups    = [var.alb_security_group_id]
  subnets            = var.public_subnet_ids
 
- enable_deletion_protection = false
+ enable_deletion_protection = true
  drop_invalid_header_fields = true
+
+ access_logs {
+   bucket  = aws_s3_bucket.alb_logs.bucket
+   enabled = true
+ }
 
  tags = var.tags
 }
