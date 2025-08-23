@@ -49,7 +49,7 @@ jobs:
           TF_VAR_github_repo: ${{ github.repository }}
           TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
           TF_VAR_subdomain: ${{ vars.SUBDOMAIN || 'url' }}
-          TF_VAR_tags: '{"Project":"${{ env.PROJECT_NAME }}","Environment":"${{ env.ENVIRONMENT }}","ManagedBy":"terraform","Repository":"${{ github.repository }}"}'
+          TF_VAR_tags: '{"Project":"${{ env.PROJECT_NAME }}","Environment":"${{ env.ENVIRONMENT }}","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
         run: |
           cd terraform/envs/${{ env.ENVIRONMENT }}
           terraform init
@@ -71,7 +71,7 @@ jobs:
           TF_VAR_github_repo: ${{ github.repository }}
           TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
           TF_VAR_subdomain: ${{ vars.SUBDOMAIN || 'url' }}
-          TF_VAR_tags: '{"Project":"${{ env.PROJECT_NAME }}","Environment":"${{ env.ENVIRONMENT }}","ManagedBy":"terraform","Repository":"${{ github.repository }}"}'
+          TF_VAR_tags: '{"Project":"${{ env.PROJECT_NAME }}","Environment":"${{ env.ENVIRONMENT }}","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
         run: |
           cd terraform/envs/${{ env.ENVIRONMENT }}
           terraform apply -auto-approve
