@@ -78,7 +78,7 @@ resource "aws_wafv2_web_acl" "main" {
     priority = 2
 
     override_action {
-      count {}
+      none {}
     }
 
     statement {
@@ -86,10 +86,11 @@ resource "aws_wafv2_web_acl" "main" {
         name        = "AWSManagedRulesKnownBadInputsRuleSet"
         vendor_name = "AWS"
 
-        managed_rule_group_configs {
-          aws_managed_rules_bot_control_rule_set {
-            inspection_level = "TARGETED"
+        rule_action_override {
+          action_to_use {
+            block {}
           }
+          name = "Log4JRCE"
         }
       }
     }
@@ -97,77 +98,6 @@ resource "aws_wafv2_web_acl" "main" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                 = "${var.name_prefix}-KnownBadInputsMetric"
-      sampled_requests_enabled    = true
-    }
-  }
-
-  rule {
-    name     = "Log4jExploitPrevention"
-    priority = 3
-
-    action {
-      block {}
-    }
-
-    statement {
-      or_statement {
-        statement {
-          byte_match_statement {
-            search_string = "jndi:ldap"
-            field_to_match {
-              uri_path {}
-            }
-            text_transformation {
-              priority = 1
-              type     = "URL_DECODE"
-            }
-            text_transformation {
-              priority = 2
-              type     = "LOWERCASE"
-            }
-            positional_constraint = "CONTAINS"
-          }
-        }
-        statement {
-          byte_match_statement {
-            search_string = "jndi:rmi"
-            field_to_match {
-              query_string {}
-            }
-            text_transformation {
-              priority = 1
-              type     = "URL_DECODE"
-            }
-            text_transformation {
-              priority = 2
-              type     = "LOWERCASE"
-            }
-            positional_constraint = "CONTAINS"
-          }
-        }
-        statement {
-          byte_match_statement {
-            search_string = "jndi:dns"
-            field_to_match {
-              body {}
-            }
-            text_transformation {
-              priority = 1
-              type     = "URL_DECODE"
-            }
-            text_transformation {
-              priority = 2
-              type     = "LOWERCASE"
-            }
-            positional_constraint = "CONTAINS"
-          }
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                 = "${var.name_prefix}-Log4jBlock"
       sampled_requests_enabled    = true
     }
   }

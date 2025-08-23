@@ -29,11 +29,6 @@ resource "aws_kms_key" "vpc_flow_log" {
           "kms:DescribeKey"
         ]
         Resource = "*"
-        Condition = {
-          ArnEquals = {
-            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/flow-logs/${var.name_prefix}"
-          }
-        }
       }
     ]
   })
@@ -46,29 +41,10 @@ resource "aws_kms_alias" "vpc_flow_log" {
   target_key_id = aws_kms_key.vpc_flow_log.key_id
 }
 
-resource "aws_vpc" "main" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_hostnames = true
-  enable_dns_support   = true
-
-  tags = merge(var.tags, {
-    Name = "${var.name_prefix}-vpc"
-  })
-}
-
 resource "aws_cloudwatch_log_group" "vpc_flow_log" {
   name              = "/aws/vpc/flow-logs/${var.name_prefix}"
   retention_in_days = 365
   kms_key_id        = aws_kms_key.vpc_flow_log.arn
-
-  tags = var.tags
-}
-
-resource "aws_vpc_flow_log" "main" {
-  iam_role_arn    = aws_iam_role.flow_log.arn
-  log_destination = aws_cloudwatch_log_group.vpc_flow_log.arn
-  traffic_type    = "ALL"
-  vpc_id          = aws_vpc.main.id
 
   tags = var.tags
 }
@@ -112,6 +88,26 @@ resource "aws_iam_role_policy" "flow_log" {
       }
     ]
   })
+}
+
+resource "aws_vpc" "main" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-vpc"
+  })
+}
+
+resource "aws_vpc_flow_log" "main" {
+  iam_role_arn    = aws_iam_role.flow_log.arn
+  log_destination = aws_cloudwatch_log_group.vpc_flow_log.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.main.id
+
+  depends_on = [aws_vpc.main]
+  tags = var.tags
 }
 
 resource "aws_default_security_group" "default" {
