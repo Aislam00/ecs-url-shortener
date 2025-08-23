@@ -209,3 +209,28 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "codedeploy_s3_comprehensive" {
+  name_prefix = "${var.name_prefix}-codedeploy-s3-full-"
+  role        = aws_iam_role.codedeploy_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:ListBucket",
+          "s3:GetBucketVersioning",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.name_prefix}-deployments",
+          "arn:aws:s3:::${var.name_prefix}-deployments/*"
+        ]
+      }
+    ]
+  })
+}
