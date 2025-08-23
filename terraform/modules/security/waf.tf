@@ -61,12 +61,6 @@ resource "aws_wafv2_web_acl" "main" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesKnownBadInputsRuleSet"
         vendor_name = "AWS"
-
-        managed_rule_group_configs {
-          aws_managed_rules_atp_rule_set {
-            login_path = "/login"
-          }
-        }
       }
     }
 
@@ -86,7 +80,3 @@ resource "aws_wafv2_web_acl" "main" {
   tags = var.tags
 }
 
-resource "aws_wafv2_web_acl_logging_configuration" "main" {
-  resource_arn            = aws_wafv2_web_acl.main.arn
-  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
-}

@@ -140,7 +140,7 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Action = [
           "ecr:GetAuthorizationToken"
         ]
-        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/*"
+        Resource = "*"
       },
       {
         Effect = "Allow"
