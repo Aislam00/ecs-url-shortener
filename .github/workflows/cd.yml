@@ -79,6 +79,11 @@ jobs:
       - name: Create deployment package and deploy
         if: github.ref == 'refs/heads/main'
         run: |
+          # Get deployment bucket name from Terraform output
+          cd terraform/envs/dev
+          DEPLOYMENT_BUCKET=$(terraform output -raw deployment_bucket_name)
+          cd ../../..
+          
           CURRENT_TASK_DEF=$(aws ecs describe-services --cluster ecs-url-shortener-dev --services ecs-url-shortener-dev --region eu-west-2 --query 'services[0].taskDefinition' --output text)
           
           aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEF --region eu-west-2 --query 'taskDefinition' > task-def.json
@@ -103,12 +108,12 @@ jobs:
           
           cd deployment-package && zip -r ../deployment.zip . && cd ..
           
-          aws s3 cp deployment.zip s3://ecs-url-shortener-global-terraform-state-11e19a9a/deployments/deployment-${{ github.sha }}.zip
+          aws s3 cp deployment.zip s3://$DEPLOYMENT_BUCKET/deployments/deployment-${{ github.sha }}.zip
           
           DEPLOYMENT_ID=$(aws deploy create-deployment \
             --application-name ecs-url-shortener-dev \
             --deployment-group-name ecs-url-shortener-dev-deployment-group \
-            --revision "revisionType=S3,s3Location={bucket=ecs-url-shortener-global-terraform-state-11e19a9a,key=deployments/deployment-${{ github.sha }}.zip,bundleType=zip}" \
+            --revision "revisionType=S3,s3Location={bucket=$DEPLOYMENT_BUCKET,key=deployments/deployment-${{ github.sha }}.zip,bundleType=zip}" \
             --region eu-west-2 \
             --query 'deploymentId' --output text)
           

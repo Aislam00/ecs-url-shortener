@@ -41,3 +41,8 @@ output "github_actions_role_arn" {
 output "dashboard_url" {
   value = module.monitoring.dashboard_url
 }
+
+output "deployment_bucket_name" {
+  description = "Name of the deployment bucket"
+  value       = module.storage.deployment_bucket_name
+}
