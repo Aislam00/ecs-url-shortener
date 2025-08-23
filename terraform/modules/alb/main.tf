@@ -1,5 +1,16 @@
+resource "aws_kms_key" "alb_logs" {
+  description         = "KMS key for ALB logs encryption"
+  enable_key_rotation = true
+  tags                = var.tags
+}
+
 resource "aws_s3_bucket" "alb_logs" {
   bucket        = "${var.name_prefix}-alb-logs"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket" "alb_logs_access_logs" {
+  bucket        = "${var.name_prefix}-alb-logs-access-logs"
   force_destroy = true
 }
 
@@ -14,9 +25,94 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.alb_logs.arn
     }
   }
+}
+
+resource "aws_s3_bucket_logging" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  target_bucket = aws_s3_bucket.alb_logs_access_logs.id
+  target_prefix = "log/"
+}
+
+resource "aws_s3_bucket_notification" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+}
+
+resource "aws_s3_bucket_replication_configuration" "alb_logs" {
+  role   = aws_iam_role.alb_logs_replication.arn
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    id     = "replicate_all"
+    status = "Enabled"
+
+    destination {
+      bucket        = aws_s3_bucket.alb_logs_replica.arn
+      storage_class = "STANDARD_IA"
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.alb_logs]
+}
+
+resource "aws_s3_bucket" "alb_logs_replica" {
+  bucket        = "${var.name_prefix}-alb-logs-replica"
+  force_destroy = true
+}
+
+resource "aws_iam_role" "alb_logs_replication" {
+  name_prefix = "${var.name_prefix}-alb-logs-replication-"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "alb_logs_replication" {
+  name_prefix = "${var.name_prefix}-alb-logs-replication-"
+  role        = aws_iam_role.alb_logs_replication.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:GetObjectVersionForReplication",
+          "s3:GetObjectVersionAcl"
+        ]
+        Effect = "Allow"
+        Resource = "${aws_s3_bucket.alb_logs.arn}/*"
+      },
+      {
+        Action = [
+          "s3:ListBucket"
+        ]
+        Effect = "Allow"
+        Resource = aws_s3_bucket.alb_logs.arn
+      },
+      {
+        Action = [
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete"
+        ]
+        Effect = "Allow"
+        Resource = "${aws_s3_bucket.alb_logs_replica.arn}/*"
+      }
+    ]
+  })
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
