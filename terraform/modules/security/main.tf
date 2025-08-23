@@ -52,3 +52,4 @@ resource "aws_security_group_rule" "alb_to_ecs" {
   security_group_id        = aws_security_group.alb.id
   description              = "Traffic to ECS containers"
 }
+

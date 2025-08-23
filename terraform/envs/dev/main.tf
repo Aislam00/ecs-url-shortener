@@ -39,6 +39,17 @@ module "vpc" {
 module "security" {
   source = "../../modules/security"
 
+  name_prefix       = local.name_prefix
+  vpc_id            = module.vpc.vpc_id
+  container_port    = var.container_port
+  github_repo       = var.github_repo
+  aws_region        = var.aws_region
+  aws_account_id    = var.aws_account_id
+  public_subnet_ids = module.vpc.public_subnet_ids
+  tags              = var.tags
+}
+  source = "../../modules/security"
+
   name_prefix    = local.name_prefix
   vpc_id         = module.vpc.vpc_id
   container_port = var.container_port

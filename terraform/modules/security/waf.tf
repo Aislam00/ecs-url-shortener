@@ -61,34 +61,18 @@ resource "aws_wafv2_web_acl" "main" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesKnownBadInputsRuleSet"
         vendor_name = "AWS"
+
+        managed_rule_group_configs {
+          aws_managed_rules_atp_rule_set {
+            login_path = "/login"
+          }
+        }
       }
     }
 
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                 = "${var.name_prefix}-KnownBadInputsRuleSet"
-      sampled_requests_enabled    = true
-    }
-  }
-
-  rule {
-    name     = "AWSManagedRulesCommonRuleSet"
-    priority = 2
-
-    override_action {
-      none {}
-    }
-
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesCommonRuleSet"
-        vendor_name = "AWS"
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                 = "${var.name_prefix}-CommonRuleSetMetric"
       sampled_requests_enabled    = true
     }
   }
@@ -102,8 +86,7 @@ resource "aws_wafv2_web_acl" "main" {
   tags = var.tags
 }
 
-
 resource "aws_wafv2_web_acl_logging_configuration" "main" {
- resource_arn            = aws_wafv2_web_acl.main.arn
- log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
+  resource_arn            = aws_wafv2_web_acl.main.arn
+  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
 }

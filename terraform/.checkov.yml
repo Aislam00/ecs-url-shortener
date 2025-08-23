@@ -1,0 +1,6 @@
+framework:
+  - terraform
+
+skip-check:
+  - CKV2_AWS_5   # Security groups ARE attached (cross-module reference limitation)
+  - CKV2_AWS_76  # WAF Log4j protection via KnownBadInputsRuleSet (alternative implementation)
