@@ -88,6 +88,39 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs_replica"
   }
 }
 
+resource "aws_s3_bucket_notification" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  topic {
+    topic_arn = aws_sns_topic.alb_logs_notifications.arn
+    events    = ["s3:ObjectCreated:*"]
+  }
+
+  depends_on = [aws_sns_topic_policy.alb_logs_notifications]
+}
+
+resource "aws_s3_bucket_notification" "alb_logs_access_logs" {
+  bucket = aws_s3_bucket.alb_logs_access_logs.id
+
+  topic {
+    topic_arn = aws_sns_topic.alb_logs_access_notifications.arn
+    events    = ["s3:ObjectCreated:*"]
+  }
+
+  depends_on = [aws_sns_topic_policy.alb_logs_access_notifications]
+}
+
+resource "aws_s3_bucket_notification" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  topic {
+    topic_arn = aws_sns_topic.alb_logs_replica_notifications.arn
+    events    = ["s3:ObjectCreated:*"]
+  }
+
+  depends_on = [aws_sns_topic_policy.alb_logs_replica_notifications]
+}
+
 resource "aws_s3_bucket_public_access_block" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
@@ -312,6 +345,130 @@ resource "aws_s3_bucket_policy" "alb_logs" {
   })
 }
 
+# SNS Topics for S3 notifications
+resource "aws_kms_key" "sns" {
+  description         = "KMS key for SNS topics encryption"
+  enable_key_rotation = true
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+  
+  tags = var.tags
+}
+
+resource "aws_sns_topic" "alb_logs_notifications" {
+  name              = "${var.name_prefix}-alb-logs-notifications"
+  kms_master_key_id = aws_kms_key.sns.arn
+  tags              = var.tags
+}
+
+resource "aws_sns_topic" "alb_logs_access_notifications" {
+  name              = "${var.name_prefix}-alb-access-notifications"
+  kms_master_key_id = aws_kms_key.sns.arn
+  tags              = var.tags
+}
+
+resource "aws_sns_topic" "alb_logs_replica_notifications" {
+  name              = "${var.name_prefix}-alb-replica-notifications"
+  kms_master_key_id = aws_kms_key.sns.arn
+  tags              = var.tags
+}
+
+resource "aws_sns_topic_policy" "alb_logs_notifications" {
+  arn = aws_sns_topic.alb_logs_notifications.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.alb_logs_notifications.arn
+        Condition = {
+          StringEquals = {
+            "aws:SourceArn" = aws_s3_bucket.alb_logs.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_sns_topic_policy" "alb_logs_access_notifications" {
+  arn = aws_sns_topic.alb_logs_access_notifications.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.alb_logs_access_notifications.arn
+        Condition = {
+          StringEquals = {
+            "aws:SourceArn" = aws_s3_bucket.alb_logs_access_logs.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_sns_topic_policy" "alb_logs_replica_notifications" {
+  arn = aws_sns_topic.alb_logs_replica_notifications.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.alb_logs_replica_notifications.arn
+        Condition = {
+          StringEquals = {
+            "aws:SourceArn" = aws_s3_bucket.alb_logs_replica.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_lb" "main" {
   name               = var.name_prefix
   internal           = false
@@ -393,6 +550,3 @@ resource "aws_wafv2_web_acl_association" "main" {
   resource_arn = aws_lb.main.arn
   web_acl_arn  = var.waf_web_acl_arn
 }
-
-
-
