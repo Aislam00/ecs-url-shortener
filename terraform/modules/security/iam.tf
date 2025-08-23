@@ -347,6 +347,7 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "ecr:GetLifecyclePolicy",
           "logs:DescribeLogGroups",
           "logs:ListTagsForResource",
+          "cloudwatch:GetDashboard",
           "ecs:DescribeClusters",
           "dynamodb:DescribeTable",
           "dynamodb:DescribeContinuousBackups",
