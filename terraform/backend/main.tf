@@ -93,6 +93,110 @@ resource "aws_s3_bucket" "terraform_state_logs" {
   force_destroy = true
 }
 
+resource "aws_s3_bucket" "terraform_state_replica" {
+  bucket        = "${local.name_prefix}-terraform-state-replica-${random_id.bucket_suffix.hex}"
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_notification" "terraform_state" {
+  bucket = aws_s3_bucket.terraform_state.id
+}
+
+resource "aws_s3_bucket_notification" "terraform_state_logs" {
+  bucket = aws_s3_bucket.terraform_state_logs.id
+}
+
+resource "aws_s3_bucket_replication_configuration" "terraform_state" {
+  role   = aws_iam_role.terraform_state_replication.arn
+  bucket = aws_s3_bucket.terraform_state.id
+
+  rule {
+    id     = "replicate_all"
+    status = "Enabled"
+
+    destination {
+      bucket        = aws_s3_bucket.terraform_state_replica.arn
+      storage_class = "STANDARD_IA"
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.terraform_state]
+}
+
+resource "aws_s3_bucket_replication_configuration" "terraform_state_logs" {
+  role   = aws_iam_role.terraform_state_replication.arn
+  bucket = aws_s3_bucket.terraform_state_logs.id
+
+  rule {
+    id     = "replicate_all"
+    status = "Enabled"
+
+    destination {
+      bucket        = aws_s3_bucket.terraform_state_replica.arn
+      storage_class = "STANDARD_IA"
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.terraform_state_logs]
+}
+
+resource "aws_iam_role" "terraform_state_replication" {
+  name_prefix = "${local.name_prefix}-replication-"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "terraform_state_replication" {
+  name_prefix = "${local.name_prefix}-replication-"
+  role        = aws_iam_role.terraform_state_replication.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:GetObjectVersionForReplication",
+          "s3:GetObjectVersionAcl"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "${aws_s3_bucket.terraform_state.arn}/*",
+          "${aws_s3_bucket.terraform_state_logs.arn}/*"
+        ]
+      },
+      {
+        Action = [
+          "s3:ListBucket"
+        ]
+        Effect = "Allow"
+        Resource = [
+          aws_s3_bucket.terraform_state.arn,
+          aws_s3_bucket.terraform_state_logs.arn
+        ]
+      },
+      {
+        Action = [
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete"
+        ]
+        Effect = "Allow"
+        Resource = "${aws_s3_bucket.terraform_state_replica.arn}/*"
+      }
+    ]
+  })
+}
+
 resource "aws_s3_bucket_versioning" "terraform_state_logs" {
   bucket = aws_s3_bucket.terraform_state_logs.id
   versioning_configuration {

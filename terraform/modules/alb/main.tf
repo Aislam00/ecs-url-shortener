@@ -1,7 +1,25 @@
+data "aws_caller_identity" "current" {}
+
 resource "aws_kms_key" "alb_logs" {
   description         = "KMS key for ALB logs encryption"
   enable_key_rotation = true
-  tags                = var.tags
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      }
+    ]
+  })
+  
+  tags = var.tags
 }
 
 resource "aws_s3_bucket" "alb_logs" {
@@ -14,8 +32,27 @@ resource "aws_s3_bucket" "alb_logs_access_logs" {
   force_destroy = true
 }
 
+resource "aws_s3_bucket" "alb_logs_replica" {
+  bucket        = "${var.name_prefix}-alb-logs-replica"
+  force_destroy = true
+}
+
 resource "aws_s3_bucket_versioning" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "alb_logs_access_logs" {
+  bucket = aws_s3_bucket.alb_logs_access_logs.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
   versioning_configuration {
     status = "Enabled"
   }
@@ -31,15 +68,112 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
   }
 }
 
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs_access_logs" {
+  bucket = aws_s3_bucket.alb_logs_access_logs.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.alb_logs.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.alb_logs.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_notification" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+}
+
+resource "aws_s3_bucket_notification" "alb_logs_access_logs" {
+  bucket = aws_s3_bucket.alb_logs_access_logs.id
+}
+
+resource "aws_s3_bucket_notification" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs_access_logs" {
+  bucket = aws_s3_bucket.alb_logs_access_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs_access_logs" {
+  bucket = aws_s3_bucket.alb_logs_access_logs.id
+
+  rule {
+    id     = "cleanup"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+    
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  rule {
+    id     = "cleanup"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+    
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_replication_configuration" "alb_logs_access_logs" {
+  role   = aws_iam_role.alb_logs_replication.arn
+  bucket = aws_s3_bucket.alb_logs_access_logs.id
+
+  rule {
+    id     = "replicate_all"
+    status = "Enabled"
+
+    destination {
+      bucket        = aws_s3_bucket.alb_logs_replica.arn
+      storage_class = "STANDARD_IA"
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.alb_logs_access_logs]
+}
+
 resource "aws_s3_bucket_logging" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
   target_bucket = aws_s3_bucket.alb_logs_access_logs.id
   target_prefix = "log/"
-}
-
-resource "aws_s3_bucket_notification" "alb_logs" {
-  bucket = aws_s3_bucket.alb_logs.id
 }
 
 resource "aws_s3_bucket_replication_configuration" "alb_logs" {
@@ -57,11 +191,6 @@ resource "aws_s3_bucket_replication_configuration" "alb_logs" {
   }
 
   depends_on = [aws_s3_bucket_versioning.alb_logs]
-}
-
-resource "aws_s3_bucket" "alb_logs_replica" {
-  bucket        = "${var.name_prefix}-alb-logs-replica"
-  force_destroy = true
 }
 
 resource "aws_iam_role" "alb_logs_replication" {
@@ -94,14 +223,20 @@ resource "aws_iam_role_policy" "alb_logs_replication" {
           "s3:GetObjectVersionAcl"
         ]
         Effect = "Allow"
-        Resource = "${aws_s3_bucket.alb_logs.arn}/*"
+        Resource = [
+          "${aws_s3_bucket.alb_logs.arn}/*",
+          "${aws_s3_bucket.alb_logs_access_logs.arn}/*"
+        ]
       },
       {
         Action = [
           "s3:ListBucket"
         ]
         Effect = "Allow"
-        Resource = aws_s3_bucket.alb_logs.arn
+        Resource = [
+          aws_s3_bucket.alb_logs.arn,
+          aws_s3_bucket.alb_logs_access_logs.arn
+        ]
       },
       {
         Action = [
