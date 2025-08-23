@@ -244,7 +244,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
         ]
         Resource = [
           "arn:aws:s3:::*terraform-state*/*",
-          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/deployments/*"
+          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/deployments/*",
+          "arn:aws:s3:::${var.name_prefix}-deployments/*"
         ]
       },
       {
@@ -256,7 +257,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
         ]
         Resource = [
           "arn:aws:s3:::*terraform-state*",
-          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a"
+          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a",
+          "arn:aws:s3:::${var.name_prefix}-deployments"
         ]
       },
       {
@@ -288,7 +290,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "codedeploy:*",
           "cloudwatch:*",
           "acm:*",
-          "ecr:*"
+          "ecr:*",
+          "s3:*"
         ]
         Resource = "*"
       }
