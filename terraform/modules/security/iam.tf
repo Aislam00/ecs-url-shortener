@@ -141,6 +141,11 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:GetAuthorizationToken"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = var.aws_region
+          }
+        }
       },
       {
         Effect = "Allow"
@@ -240,8 +245,14 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "s3:GetObjectVersion"
         ]
         Resource = [
-          "arn:aws:s3:::*terraform-state*/*"
+          "arn:aws:s3:::*terraform-state*/*",
+          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/deployments/*"
         ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = var.aws_region
+          }
+        }
       },
       {
         Effect = "Allow"
@@ -251,8 +262,14 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "s3:GetBucketLocation"
         ]
         Resource = [
-          "arn:aws:s3:::*terraform-state*"
+          "arn:aws:s3:::*terraform-state*",
+          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a"
         ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = var.aws_region
+          }
+        }
       },
       {
         Effect = "Allow"
@@ -307,21 +324,30 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "s3:GetLifecycleConfiguration",
           "s3:GetBucketLogging",
           "s3:GetBucketPolicy",
+          "s3:GetReplicationConfiguration",
           "sns:GetTopicAttributes",
           "sns:ListTopics",
+          "sns:ListTagsForResource",
           "elasticloadbalancing:DescribeLoadBalancers",
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeLoadBalancerAttributes",
+          "elasticloadbalancing:DescribeTargetGroupAttributes",
           "acm:DescribeCertificate",
           "acm:ListCertificates",
+          "acm:ListTagsForCertificate",
           "codedeploy:GetApplication",
           "codedeploy:GetDeploymentGroup",
+          "codedeploy:ListTagsForResource",
           "ecr:DescribeRepositories",
+          "ecr:ListTagsForResource",
           "logs:DescribeLogGroups",
           "logs:ListTagsForResource",
           "ecs:DescribeClusters",
           "dynamodb:DescribeTable",
           "dynamodb:DescribeContinuousBackups",
+          "dynamodb:DescribeTimeToLive",
+          "ssm:DescribeParameters",
           "iam:GetRole",
           "iam:GetRolePolicy", 
           "iam:ListRolePolicies",
@@ -331,6 +357,11 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "wafv2:ListTagsForResource"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" = var.aws_region
+          }
+        }
       },
       {
         Effect = "Allow"

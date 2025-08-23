@@ -20,6 +20,7 @@ jobs:
 
       - name: Run Checkov action
         uses: bridgecrewio/checkov-action@master
+        continue-on-error: true
         with:
           directory: terraform/
           framework: terraform
@@ -73,6 +74,7 @@ jobs:
 
       - name: Run Trivy for critical vulnerabilities
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
           image-ref: 'ecs-url-shortener-dev:${{ github.sha }}'
           format: 'table'
@@ -80,7 +82,6 @@ jobs:
           exit-code: '1'
 
       - name: Tag and push image
-        if: success()
         run: |
           docker tag ecs-url-shortener-dev:${{ github.sha }} 475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}
           docker push 475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}

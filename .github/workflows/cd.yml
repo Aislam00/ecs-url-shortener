@@ -63,6 +63,11 @@ jobs:
           cd terraform/envs/dev
           terraform apply -auto-approve
 
+      - name: Wait for infrastructure to be ready
+        run: |
+          echo "Waiting 30 seconds for infrastructure to stabilize..."
+          sleep 30
+
       - name: Create deployment package and deploy
         if: github.ref == 'refs/heads/main'
         run: |
