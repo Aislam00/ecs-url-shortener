@@ -139,3 +139,4 @@ https://github.com/user-attachments/assets/6389f46a-ac8c-4002-8f82-61596a04ba13
 
 This is a full end-to-end project demonstrating enterprise-grade AWS infrastructure patterns including containerized microservices, Infrastructure as Code, automated CI/CD pipelines, security best practices, and production monitoring. The platform showcases real-world ECS operations with scalable, cost-optimized architecture.# fixed ecr policy resource
 # trigger new deployment after codedeploy s3 fix
+# add listbucket permission for codedeploy

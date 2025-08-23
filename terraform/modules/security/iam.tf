@@ -94,7 +94,8 @@ resource "aws_iam_role_policy" "codedeploy_s3_access" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject"
+          "s3:GetObject",
+          "s3:ListBucket"
         ]
         Resource = "arn:aws:s3:::${var.name_prefix}-deployments/*"
       }
