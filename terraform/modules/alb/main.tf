@@ -324,7 +324,7 @@ resource "aws_lb" "main" {
 
   access_logs {
     bucket  = aws_s3_bucket.alb_logs.bucket
-    enabled = false
+    enabled = true
   }
 
   tags = var.tags
