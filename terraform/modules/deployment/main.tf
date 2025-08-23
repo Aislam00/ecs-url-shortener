@@ -12,19 +12,14 @@ resource "aws_s3_bucket" "access_logs" {
   tags = var.tags
 }
 
-resource "aws_s3_bucket_versioning" "deployment_bucket" {
-  bucket = aws_s3_bucket.deployment_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
+resource "aws_s3_bucket" "deployment_replica" {
+  bucket        = "${var.name_prefix}-deployments-replica"
+  force_destroy = true
+  
+  tags = var.tags
 }
 
-resource "aws_s3_bucket_versioning" "access_logs" {
-  bucket = aws_s3_bucket.access_logs.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
+data "aws_caller_identity" "current" {}
 
 resource "aws_kms_key" "deployment_bucket" {
   description         = "KMS key for deployment bucket encryption"
@@ -50,7 +45,21 @@ resource "aws_kms_key" "deployment_bucket" {
         }
         Action = [
           "kms:Decrypt",
-          "kms:GenerateDataKey"
+          "kms:GenerateDataKey",
+          "kms:Encrypt"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow SNS Service"
+        Effect = "Allow"
+        Principal = {
+          Service = "sns.amazonaws.com"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey",
+          "kms:Encrypt"
         ]
         Resource = "*"
       }
@@ -61,6 +70,27 @@ resource "aws_kms_key" "deployment_bucket" {
 resource "aws_kms_alias" "deployment_bucket" {
   name          = "alias/${var.name_prefix}-deployment-bucket"
   target_key_id = aws_kms_key.deployment_bucket.key_id
+}
+
+resource "aws_s3_bucket_versioning" "deployment_bucket" {
+  bucket = aws_s3_bucket.deployment_bucket.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "deployment_replica" {
+  bucket = aws_s3_bucket.deployment_replica.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "deployment_bucket" {
@@ -79,7 +109,19 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "access_logs" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.deployment_bucket.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "deployment_replica" {
+  bucket = aws_s3_bucket.deployment_replica.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.deployment_bucket.arn
     }
   }
 }
@@ -89,6 +131,13 @@ resource "aws_s3_bucket_logging" "deployment_bucket" {
 
   target_bucket = aws_s3_bucket.access_logs.id
   target_prefix = "deployment-bucket-logs/"
+}
+
+resource "aws_s3_bucket_logging" "deployment_replica" {
+  bucket = aws_s3_bucket.deployment_replica.id
+
+  target_bucket = aws_s3_bucket.access_logs.id
+  target_prefix = "replica-bucket-logs/"
 }
 
 resource "aws_s3_bucket_public_access_block" "deployment_bucket" {
@@ -102,6 +151,15 @@ resource "aws_s3_bucket_public_access_block" "deployment_bucket" {
 
 resource "aws_s3_bucket_public_access_block" "access_logs" {
   bucket = aws_s3_bucket.access_logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_public_access_block" "deployment_replica" {
+  bucket = aws_s3_bucket.deployment_replica.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -151,39 +209,59 @@ resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
   }
 }
 
-data "aws_caller_identity" "current" {}
+resource "aws_sns_topic" "s3_notifications" {
+  name_prefix = "${var.name_prefix}-s3-notifications-"
+  
+  kms_master_key_id = aws_kms_key.deployment_bucket.arn
+}
 
-resource "aws_s3_bucket_replication_configuration" "deployment_bucket" {
-  role   = aws_iam_role.replication.arn
+resource "aws_sns_topic_policy" "s3_notifications" {
+  arn = aws_sns_topic.s3_notifications.arn
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+        Action   = "SNS:Publish"
+        Resource = aws_sns_topic.s3_notifications.arn
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket_notification" "deployment_bucket" {
   bucket = aws_s3_bucket.deployment_bucket.id
 
-  rule {
-    id     = "replication_rule"
-    status = "Enabled"
-
-    destination {
-      bucket        = aws_s3_bucket.deployment_replica.arn
-      storage_class = "STANDARD_IA"
-    }
+  topic {
+    topic_arn = aws_sns_topic.s3_notifications.arn
+    events    = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
   }
-
-  depends_on = [
-    aws_s3_bucket_versioning.deployment_bucket,
-    aws_s3_bucket_versioning.deployment_replica
-  ]
 }
 
-resource "aws_s3_bucket" "deployment_replica" {
-  bucket        = "${var.name_prefix}-deployments-replica"
-  force_destroy = true
-  
-  tags = var.tags
+resource "aws_s3_bucket_notification" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+
+  topic {
+    topic_arn = aws_sns_topic.s3_notifications.arn
+    events    = ["s3:ObjectCreated:*"]
+  }
 }
 
-resource "aws_s3_bucket_versioning" "deployment_replica" {
+resource "aws_s3_bucket_notification" "deployment_replica" {
   bucket = aws_s3_bucket.deployment_replica.id
-  versioning_configuration {
-    status = "Enabled"
+
+  topic {
+    topic_arn = aws_sns_topic.s3_notifications.arn
+    events    = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
   }
 }
 
@@ -238,47 +316,22 @@ resource "aws_iam_role_policy" "replication" {
   })
 }
 
-resource "aws_s3_bucket_notification" "deployment_bucket" {
+resource "aws_s3_bucket_replication_configuration" "deployment_bucket" {
+  role   = aws_iam_role.replication.arn
   bucket = aws_s3_bucket.deployment_bucket.id
 
-  topic {
-    topic_arn = aws_sns_topic.s3_notifications.arn
-    events    = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
+  rule {
+    id     = "replication_rule"
+    status = "Enabled"
+
+    destination {
+      bucket        = aws_s3_bucket.deployment_replica.arn
+      storage_class = "STANDARD_IA"
+    }
   }
-}
 
-resource "aws_s3_bucket_notification" "access_logs" {
-  bucket = aws_s3_bucket.access_logs.id
-
-  topic {
-    topic_arn = aws_sns_topic.s3_notifications.arn
-    events    = ["s3:ObjectCreated:*"]
-  }
-}
-
-resource "aws_sns_topic" "s3_notifications" {
-  name_prefix = "${var.name_prefix}-s3-notifications-"
-}
-
-resource "aws_sns_topic_policy" "s3_notifications" {
-  arn = aws_sns_topic.s3_notifications.arn
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "s3.amazonaws.com"
-        }
-        Action   = "SNS:Publish"
-        Resource = aws_sns_topic.s3_notifications.arn
-        Condition = {
-          StringEquals = {
-            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
-          }
-        }
-      }
-    ]
-  })
+  depends_on = [
+    aws_s3_bucket_versioning.deployment_bucket,
+    aws_s3_bucket_versioning.deployment_replica
+  ]
 }
