@@ -56,19 +56,19 @@ resource "aws_vpc" "main" {
   })
 }
 
+resource "aws_cloudwatch_log_group" "vpc_flow_log" {
+  name              = "/aws/vpc/flow-logs/${var.name_prefix}"
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.vpc_flow_log.arn
+
+  tags = var.tags
+}
+
 resource "aws_vpc_flow_log" "main" {
   iam_role_arn    = aws_iam_role.flow_log.arn
   log_destination = aws_cloudwatch_log_group.vpc_flow_log.arn
   traffic_type    = "ALL"
   vpc_id          = aws_vpc.main.id
-
-  tags = var.tags
-}
-
-resource "aws_cloudwatch_log_group" "vpc_flow_log" {
-  name              = "/aws/vpc/flow-logs/${var.name_prefix}"
-  retention_in_days = 365
-  kms_key_id        = aws_kms_key.vpc_flow_log.arn
 
   tags = var.tags
 }

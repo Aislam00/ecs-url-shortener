@@ -332,3 +332,36 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_r
 resource "aws_s3_bucket_notification" "terraform_state_replica" {
   bucket = aws_s3_bucket.terraform_state_replica.id
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "terraform_state_replica" {
+  bucket = aws_s3_bucket.terraform_state_replica.id
+
+  rule {
+    id     = "cleanup"
+    status = "Enabled"
+
+    expiration {
+      days = 90
+    }
+    
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "terraform_state_replica" {
+  bucket = aws_s3_bucket.terraform_state_replica.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_logging" "terraform_state_replica" {
+  bucket = aws_s3_bucket.terraform_state_replica.id
+
+  target_bucket = aws_s3_bucket.terraform_state_logs.id
+  target_prefix = "replica-log/"
+}

@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 resource "aws_cloudwatch_log_group" "waf" {
   name              = "/aws/wafv2/${var.name_prefix}"
   retention_in_days = 365
@@ -72,29 +74,35 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   rule {
-    name     = "AWSManagedRulesAmazonIpReputationList"
+    name     = "AWSManagedRulesKnownBadInputsRuleSet"
     priority = 2
 
     override_action {
-      none {}
+      count {}
     }
 
     statement {
       managed_rule_group_statement {
-        name        = "AWSManagedRulesAmazonIpReputationList"
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
         vendor_name = "AWS"
+
+        managed_rule_group_configs {
+          aws_managed_rules_bot_control_rule_set {
+            inspection_level = "TARGETED"
+          }
+        }
       }
     }
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                 = "${var.name_prefix}-IpReputationMetric"
+      metric_name                 = "${var.name_prefix}-KnownBadInputsMetric"
       sampled_requests_enabled    = true
     }
   }
 
   rule {
-    name     = "Log4jBlock"
+    name     = "Log4jExploitPrevention"
     priority = 3
 
     action {
@@ -102,20 +110,58 @@ resource "aws_wafv2_web_acl" "main" {
     }
 
     statement {
-      byte_match_statement {
-        search_string = "jndi:"
-        field_to_match {
-          all_query_arguments {}
+      or_statement {
+        statement {
+          byte_match_statement {
+            search_string = "jndi:ldap"
+            field_to_match {
+              uri_path {}
+            }
+            text_transformation {
+              priority = 1
+              type     = "URL_DECODE"
+            }
+            text_transformation {
+              priority = 2
+              type     = "LOWERCASE"
+            }
+            positional_constraint = "CONTAINS"
+          }
         }
-        text_transformation {
-          priority = 1
-          type     = "URL_DECODE"
+        statement {
+          byte_match_statement {
+            search_string = "jndi:rmi"
+            field_to_match {
+              query_string {}
+            }
+            text_transformation {
+              priority = 1
+              type     = "URL_DECODE"
+            }
+            text_transformation {
+              priority = 2
+              type     = "LOWERCASE"
+            }
+            positional_constraint = "CONTAINS"
+          }
         }
-        text_transformation {
-          priority = 2
-          type     = "LOWERCASE"
+        statement {
+          byte_match_statement {
+            search_string = "jndi:dns"
+            field_to_match {
+              body {}
+            }
+            text_transformation {
+              priority = 1
+              type     = "URL_DECODE"
+            }
+            text_transformation {
+              priority = 2
+              type     = "LOWERCASE"
+            }
+            positional_constraint = "CONTAINS"
+          }
         }
-        positional_constraint = "CONTAINS"
       }
     }
 

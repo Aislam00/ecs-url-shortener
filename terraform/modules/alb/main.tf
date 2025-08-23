@@ -381,3 +381,59 @@ resource "aws_s3_bucket_logging" "alb_logs_replica" {
   target_bucket = aws_s3_bucket.alb_logs_access_logs.id
   target_prefix = "replica-log/"
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  rule {
+    id     = "cleanup"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+    
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  rule {
+    id     = "cleanup"
+    status = "Enabled"
+
+    expiration {
+      days = 30
+    }
+    
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_notification" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+}
