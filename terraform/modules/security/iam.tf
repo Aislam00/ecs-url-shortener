@@ -30,7 +30,7 @@ resource "aws_iam_role_policy" "ecs_task_dynamodb" {
           "dynamodb:GetItem",
           "dynamodb:PutItem"
         ]
-        Resource = "arn:aws:dynamodb:*:*:table/${var.name_prefix}-*"
+        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.name_prefix}-urls"
       }
     ]
   })
@@ -140,7 +140,7 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Action = [
           "ecr:GetAuthorizationToken"
         ]
-        Resource = "*"
+        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/*"
       },
       {
         Effect = "Allow"
@@ -153,7 +153,7 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:UploadLayerPart",
           "ecr:CompleteLayerUpload"
         ]
-        Resource = "arn:aws:ecr:${var.aws_region}:${var.aws_account_id}:repository/${var.name_prefix}"
+        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.name_prefix}"
       }
     ]
   })
@@ -175,7 +175,11 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
           "ecs:UpdateService",
           "ecs:DescribeTasks"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/${var.name_prefix}/*",
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.name_prefix}:*",
+          "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/${var.name_prefix}"
+        ]
       },
       {
         Effect = "Allow"
@@ -186,7 +190,11 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
           "codedeploy:GetDeploymentConfig",
           "codedeploy:RegisterApplicationRevision"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:codedeploy:${var.aws_region}:${data.aws_caller_identity.current.account_id}:application/${var.name_prefix}",
+          "arn:aws:codedeploy:${var.aws_region}:${data.aws_caller_identity.current.account_id}:deploymentgroup:${var.name_prefix}/*",
+          "arn:aws:codedeploy:${var.aws_region}:${data.aws_caller_identity.current.account_id}:deploymentconfig/*"
+        ]
       },
       {
         Effect = "Allow"
@@ -194,9 +202,9 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
           "iam:PassRole"
         ]
         Resource = [
-          aws_iam_role.ecs_task_role.arn,
-          aws_iam_role.ecs_execution_role.arn,
-          aws_iam_role.codedeploy_role.arn
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-ecs-task-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-ecs-execution-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-codedeploy-*"
         ]
       },
       {
@@ -210,14 +218,7 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
           "ssm:AddTagsToResource",
           "ssm:ListTagsForResource"
         ]
-        Resource = "arn:aws:ssm:eu-west-2:475641479654:parameter/ecs-url-shortener-dev/*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ssm:DescribeParameters"
-        ]
-        Resource = "*"
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.name_prefix}/*"
       }
     ]
   })
@@ -239,7 +240,7 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "s3:GetObjectVersion"
         ]
         Resource = [
-          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a/*"
+          "arn:aws:s3:::*terraform-state*/*"
         ]
       },
       {
@@ -250,7 +251,7 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "s3:GetBucketLocation"
         ]
         Resource = [
-          "arn:aws:s3:::ecs-url-shortener-global-terraform-state-11e19a9a"
+          "arn:aws:s3:::*terraform-state*"
         ]
       },
       {
@@ -262,200 +263,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "dynamodb:DescribeTable"
         ]
         Resource = [
-          "arn:aws:dynamodb:eu-west-2:475641479654:table/ecs-url-shortener-global-terraform-lock"
+          "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/*terraform-lock*"
         ]
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:GetRole",
-          "iam:GetRolePolicy",
-          "iam:ListRolePolicies",
-          "iam:ListAttachedRolePolicies",
-          "iam:GetOpenIDConnectProvider",
-          "iam:ListOpenIDConnectProviders"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ec2:DescribeVpcs",
-          "ec2:DescribeSubnets",
-          "ec2:DescribeSecurityGroups",
-          "ec2:DescribeVpcEndpoints",
-          "ec2:DescribeAvailabilityZones",
-          "ec2:DescribeInternetGateways",
-          "ec2:DescribeRouteTables",
-          "ec2:DescribeNetworkAcls",
-          "ec2:DescribeVpcAttribute",
-          "ec2:DescribeTags",
-          "ec2:DescribePrefixLists",
-          "ec2:DescribeNetworkInterfaces"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticloadbalancing:DescribeLoadBalancers",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:DescribeTags",
-          "elasticloadbalancing:DescribeLoadBalancerAttributes",
-          "elasticloadbalancing:DescribeTargetGroupAttributes",
-          "elasticloadbalancing:DescribeListenerAttributes"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "wafv2:GetWebACL",
-          "wafv2:ListWebACLs",
-          "wafv2:ListTagsForResource",
-          "wafv2:GetWebACLForResource"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "dynamodb:DescribeTable",
-          "dynamodb:ListTables",
-          "dynamodb:ListTagsOfResource",
-          "dynamodb:DescribeContinuousBackups",
-          "dynamodb:DescribeTimeToLive"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams",
-          "logs:ListTagsLogGroup",
-          "logs:ListTagsForResource"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:DescribeRepositories",
-          "ecr:ListTagsForResource",
-          "ecr:GetLifecyclePolicy"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "codedeploy:ListTagsForResource",
-          "codedeploy:GetDeploymentGroup"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeClusters"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "route53:GetHostedZone",
-          "route53:ListHostedZones",
-          "route53:GetChange",
-          "route53:ListResourceRecordSets",
-          "route53:ChangeResourceRecordSets"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "acm:DescribeCertificate",
-          "acm:ListCertificates",
-          "acm:GetCertificate",
-          "acm:ListTagsForCertificate"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "cloudwatch:GetDashboard",
-          "cloudwatch:ListDashboards",
-          "cloudwatch:PutDashboard",
-          "cloudwatch:DeleteDashboard"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "github_actions_additional" {
-  name_prefix = "${var.name_prefix}-github-additional-"
-  role        = aws_iam_role.github_actions.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticloadbalancing:DescribeLoadBalancerAttributes",
-          "elasticloadbalancing:DescribeTargetGroupAttributes",
-          "elasticloadbalancing:DescribeListenerAttributes"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "codedeploy:ListTagsForResource",
-          "codedeploy:GetDeploymentGroup"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeClusters"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetLifecyclePolicy"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "dynamodb:DescribeTimeToLive"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ec2:DescribeNetworkInterfaces"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "wafv2:GetWebACLForResource"
-        ]
-        Resource = "*"
       }
     ]
   })

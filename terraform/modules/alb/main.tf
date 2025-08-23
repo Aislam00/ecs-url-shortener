@@ -122,24 +122,6 @@ resource "aws_lb_listener" "https" {
  tags = var.tags
 }
 
-resource "aws_lb_listener" "http_redirect" {
- load_balancer_arn = aws_lb.main.arn
- port              = "80"
- protocol          = "HTTP"
-
- default_action {
-   type = "redirect"
-
-   redirect {
-     port        = "443"
-     protocol    = "HTTPS"
-     status_code = "HTTP_301"
-   }
- }
-
- tags = var.tags
-}
-
 resource "aws_wafv2_web_acl_association" "main" {
  resource_arn = aws_lb.main.arn
  web_acl_arn  = var.waf_web_acl_arn
