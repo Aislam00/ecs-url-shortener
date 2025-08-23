@@ -342,3 +342,26 @@ resource "aws_iam_role_policy" "github_actions_read_permissions" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "github_actions_comprehensive_read" {
+  name_prefix = "${var.name_prefix}-github-comprehensive-"
+  role        = aws_iam_role.github_actions.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "dynamodb:DescribeTable",
+          "ec2:DescribeNetworkInterfaces",
+          "logs:DescribeLogGroups",
+          "wafv2:GetWebACL",
+          "wafv2:ListTagsForResource"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
