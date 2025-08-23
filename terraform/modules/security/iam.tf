@@ -145,6 +145,14 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
       {
         Effect = "Allow"
         Action = [
+          "kms:GetKeyRotationStatus",
+          "ec2:DescribeVpcAttribute",
+          "ec2:DescribeAddressesAttribute"
+        ]
+        Resource = "*"      },
+      {
+        Effect = "Allow"
+        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
@@ -290,6 +298,14 @@ resource "aws_iam_role_policy" "github_actions_read_permissions" {
       {
         Effect = "Allow"
         Action = [
+          "kms:GetKeyRotationStatus",
+          "ec2:DescribeVpcAttribute",
+          "ec2:DescribeAddressesAttribute"
+        ]
+        Resource = "*"      },
+      {
+        Effect = "Allow"
+        Action = [
           "iam:GetRole",
           "iam:GetRolePolicy",
           "iam:ListRolePolicies",
@@ -311,7 +327,15 @@ resource "aws_iam_role_policy" "github_actions_read_permissions" {
           "ec2:DescribeFlowLogs"
         ]
         Resource = "*"
-      }
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:GetKeyRotationStatus",
+          "ec2:DescribeVpcAttribute",
+          "ec2:DescribeAddressesAttribute"
+        ]
+        Resource = "*"      }
     ]
   })
 }
