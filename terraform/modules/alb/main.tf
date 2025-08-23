@@ -393,3 +393,18 @@ resource "aws_wafv2_web_acl_association" "main" {
   resource_arn = aws_lb.main.arn
   web_acl_arn  = var.waf_web_acl_arn
 }
+
+resource "aws_sns_topic" "alb_logs_notifications" {
+  name = "${var.name_prefix}-alb-logs-notifications"
+  tags = var.tags
+}
+
+resource "aws_sns_topic" "alb_logs_access_notifications" {
+  name = "${var.name_prefix}-alb-access-notifications"
+  tags = var.tags
+}
+
+resource "aws_sns_topic" "alb_logs_replica_notifications" {
+  name = "${var.name_prefix}-alb-replica-notifications"
+  tags = var.tags
+}
