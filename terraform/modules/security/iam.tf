@@ -374,7 +374,8 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
         Action = [
           "route53:GetHostedZone",
           "route53:ListResourceRecordSets",
-          "route53:ListHostedZones"
+          "route53:ListHostedZones",
+          "route53:ListTagsForResource"
         ]
         Resource = "*"
       },
