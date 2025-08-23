@@ -1,7 +1,16 @@
+data "aws_route53_zone" "main" {
+  count = var.hosted_zone_id == "" ? 1 : 0
+  name  = var.domain_name
+}
+
+locals {
+  zone_id = var.hosted_zone_id != "" ? var.hosted_zone_id : data.aws_route53_zone.main[0].zone_id
+}
+
 resource "aws_acm_certificate" "main" {
-  domain_name       = var.domain_name
+  domain_name               = var.domain_name
   subject_alternative_names = ["*.${var.domain_name}"]
-  validation_method = "DNS"
+  validation_method         = "DNS"
 
   lifecycle {
     create_before_destroy = true
@@ -24,7 +33,7 @@ resource "aws_route53_record" "cert_validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = var.hosted_zone_id
+  zone_id         = local.zone_id
 }
 
 resource "aws_acm_certificate_validation" "main" {

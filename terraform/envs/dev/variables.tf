@@ -1,57 +1,57 @@
 variable "aws_region" {
-  type        = string
+  type = string
 }
 
 variable "aws_account_id" {
-  type        = string
+  type = string
 }
 
 variable "project_name" {
-  type        = string
+  type = string
 }
 
 variable "environment" {
-  type        = string
+  type = string
 }
 
 variable "tags" {
-  type        = map(string)
+  type = map(string)
 }
 
 variable "vpc_cidr" {
-  type        = string
+  type = string
 }
 
 variable "availability_zones" {
-  type        = list(string)
+  type = list(string)
 }
 
 variable "private_subnet_cidrs" {
-  type        = list(string)
+  type = list(string)
 }
 
 variable "public_subnet_cidrs" {
-  type        = list(string)
+  type = list(string)
 }
 
 variable "container_port" {
-  type        = number
+  type = number
 }
 
 variable "health_check_path" {
-  type        = string
+  type = string
 }
 
 variable "github_repo" {
-  type        = string
+  type = string
 }
 
 variable "domain_name" {
-  type        = string
-  default     = ""
+  type    = string
+  default = ""
 }
 
 variable "subdomain" {
-  type        = string
-  default     = "url"
+  type    = string
+  default = "url"
 }

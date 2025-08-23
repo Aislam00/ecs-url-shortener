@@ -1,27 +1,27 @@
 variable "name_prefix" {
-  type        = string
+  type = string
 }
 
 variable "aws_region" {
-  type        = string
+  type = string
 }
 
 variable "ecs_service_name" {
-  type        = string
+  type = string
 }
 
 variable "ecs_cluster_name" {
-  type        = string
+  type = string
 }
 
 variable "alb_name" {
-  type        = string
+  type = string
 }
 
 variable "target_group_name" {
-  type        = string
+  type = string
 }
 
 variable "tags" {
-  type        = map(string)
+  type = map(string)
 }

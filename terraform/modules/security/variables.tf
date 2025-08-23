@@ -1,27 +1,27 @@
 variable "name_prefix" {
-  type        = string
+  type = string
 }
 
 variable "vpc_id" {
-  type        = string
+  type = string
 }
 
 variable "container_port" {
-  type        = number
+  type = number
 }
 
 variable "tags" {
-  type        = map(string)
+  type = map(string)
 }
 
 variable "github_repo" {
-  type        = string
+  type = string
 }
 
 variable "aws_region" {
-  type        = string
+  type = string
 }
 
 variable "aws_account_id" {
-  type        = string
+  type = string
 }

@@ -22,7 +22,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidrs[count.index]
   availability_zone       = var.availability_zones[count.index]
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
 
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-public-subnet-${count.index + 1}"
@@ -40,6 +40,27 @@ resource "aws_subnet" "private" {
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-private-subnet-${count.index + 1}"
     Type = "private"
+  })
+}
+
+resource "aws_eip" "nat" {
+  count  = length(var.public_subnet_cidrs)
+  domain = "vpc"
+
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-nat-eip-${count.index + 1}"
+  })
+}
+
+resource "aws_nat_gateway" "main" {
+  count         = length(var.public_subnet_cidrs)
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+
+  depends_on = [aws_internet_gateway.main]
+
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-nat-gw-${count.index + 1}"
   })
 }
 
@@ -63,6 +84,13 @@ resource "aws_route_table" "private" {
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-private-rt-${count.index + 1}"
   })
+}
+
+resource "aws_route" "private_nat" {
+  count                  = length(var.private_subnet_cidrs)
+  route_table_id         = aws_route_table.private[count.index].id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.main[count.index].id
 }
 
 resource "aws_route_table_association" "public" {

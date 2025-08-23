@@ -35,29 +35,21 @@ resource "aws_codedeploy_deployment_group" "app" {
   load_balancer_info {
     target_group_pair_info {
       target_group {
-        name = aws_lb_target_group.blue.name
+        name = var.target_group_blue_name
       }
       target_group {
-        name = aws_lb_target_group.green.name
+        name = var.target_group_green_name
       }
       prod_traffic_route {
-        listener_arns = [aws_lb_listener.https.arn]
+        listener_arns = [var.https_listener_arn]
       }
     }
   }
 
   ecs_service {
-    cluster_name = aws_ecs_cluster.main.name
-    service_name = aws_ecs_service.app.name
+    cluster_name = var.ecs_cluster_name
+    service_name = var.ecs_service_name
   }
-
-  depends_on = [
-    aws_ecs_service.app,
-    aws_lb_target_group.blue,
-    aws_lb_target_group.green,
-    aws_lb_listener.https,
-    aws_lb_listener.http_redirect
-  ]
 
   tags = var.tags
 }

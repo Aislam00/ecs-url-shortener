@@ -9,6 +9,7 @@
 **/*_override.tf
 **/*_override.tf.json
 .terraform.lock.hcl
+*-backup
 
 .aws/
 .env

@@ -80,7 +80,7 @@ resource "aws_ecs_service" "app" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.blue.arn
+    target_group_arn = var.target_group_blue_arn
     container_name   = "app"
     container_port   = var.container_port
   }
@@ -93,7 +93,7 @@ resource "aws_ecs_service" "app" {
     ]
   }
 
-  depends_on = [aws_lb_listener.https, aws_lb_listener.http_redirect]
+  depends_on = [var.https_listener_arn]
 
   tags = var.tags
 }

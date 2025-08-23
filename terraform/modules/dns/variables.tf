@@ -1,21 +1,21 @@
 variable "domain_name" {
-  type        = string
-  default     = ""
+  type    = string
+  default = ""
 }
 
 variable "subdomain" {
-  type        = string
-  default     = "url"
+  type    = string
+  default = "url"
 }
 
 variable "alb_dns_name" {
-  type        = string
+  type = string
 }
 
 variable "alb_zone_id" {
-  type        = string
+  type = string
 }
 
 variable "tags" {
-  type        = map(string)
+  type = map(string)
 }

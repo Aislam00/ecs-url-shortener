@@ -19,6 +19,11 @@ locals {
   name_prefix = "${var.project_name}-${var.environment}"
 }
 
+data "aws_route53_zone" "main" {
+  count = var.domain_name != "" ? 1 : 0
+  name  = var.domain_name
+}
+
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -39,6 +44,15 @@ module "security" {
   github_repo    = var.github_repo
   aws_region     = var.aws_region
   aws_account_id = var.aws_account_id
+  tags           = var.tags
+}
+
+module "certificate" {
+  count  = var.domain_name != "" ? 1 : 0
+  source = "../../modules/certificate"
+
+  domain_name    = var.domain_name
+  hosted_zone_id = data.aws_route53_zone.main[0].zone_id
   tags           = var.tags
 }
 
@@ -65,7 +79,7 @@ module "alb" {
   vpc_id                = module.vpc.vpc_id
   container_port        = var.container_port
   health_check_path     = var.health_check_path
-  certificate_arn       = "arn:aws:acm:eu-west-2:475641479654:certificate/3b8f0c04-5cc5-44f4-aba9-1688c24f3c05"
+  certificate_arn       = var.domain_name != "" ? module.certificate[0].certificate_arn : ""
   waf_web_acl_arn       = module.security.waf_web_acl_arn
   tags                  = var.tags
 }
@@ -73,35 +87,36 @@ module "alb" {
 module "ecs" {
   source = "../../modules/ecs"
 
-  name_prefix             = local.name_prefix
-  aws_account_id          = var.aws_account_id
-  aws_region              = var.aws_region
-  container_port          = var.container_port
-  dynamodb_table_name     = module.storage.dynamodb_table_name
-  health_check_path       = var.health_check_path
-  ecs_execution_role_arn  = module.security.ecs_execution_role_arn
-  ecs_task_role_arn       = module.security.ecs_task_role_arn
-  private_subnet_ids      = module.vpc.private_subnet_ids
-  ecs_security_group_id   = module.security.ecs_security_group_id
-  target_group_blue_arn   = module.alb.target_group_blue_arn
-  https_listener_arn      = module.alb.https_listener_arn
-  tags                    = var.tags
+  name_prefix            = local.name_prefix
+  aws_account_id         = var.aws_account_id
+  aws_region             = var.aws_region
+  container_port         = var.container_port
+  dynamodb_table_name    = module.storage.dynamodb_table_name
+  health_check_path      = var.health_check_path
+  ecs_execution_role_arn = module.security.ecs_execution_role_arn
+  ecs_task_role_arn      = module.security.ecs_task_role_arn
+  private_subnet_ids     = module.vpc.private_subnet_ids
+  ecs_security_group_id  = module.security.ecs_security_group_id
+  target_group_blue_arn  = module.alb.target_group_blue_arn
+  https_listener_arn     = module.alb.https_listener_arn
+  tags                   = var.tags
 }
 
 module "codedeploy" {
   source = "../../modules/codedeploy"
 
-  name_prefix              = local.name_prefix
-  codedeploy_role_arn      = module.security.codedeploy_role_arn
-  target_group_blue_name   = module.alb.target_group_blue_name
-  target_group_green_name  = module.alb.target_group_green_name
-  https_listener_arn       = module.alb.https_listener_arn
-  ecs_cluster_name         = module.ecs.ecs_cluster_name
-  ecs_service_name         = module.ecs.ecs_service_name
-  tags                     = var.tags
+  name_prefix             = local.name_prefix
+  codedeploy_role_arn     = module.security.codedeploy_role_arn
+  target_group_blue_name  = module.alb.target_group_blue_name
+  target_group_green_name = module.alb.target_group_green_name
+  https_listener_arn      = module.alb.https_listener_arn
+  ecs_cluster_name        = module.ecs.ecs_cluster_name
+  ecs_service_name        = module.ecs.ecs_service_name
+  tags                    = var.tags
 }
 
 module "dns" {
+  count  = var.domain_name != "" ? 1 : 0
   source = "../../modules/dns"
 
   domain_name  = var.domain_name
@@ -116,8 +131,8 @@ module "monitoring" {
 
   name_prefix       = local.name_prefix
   aws_region        = var.aws_region
-  ecs_service_name  = local.name_prefix
-  ecs_cluster_name  = local.name_prefix
+  ecs_service_name  = module.ecs.ecs_service_name
+  ecs_cluster_name  = module.ecs.ecs_cluster_name
   alb_name          = module.alb.alb_name
   target_group_name = module.alb.target_group_blue_name
   tags              = var.tags
