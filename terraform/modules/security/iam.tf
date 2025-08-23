@@ -334,6 +334,7 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "elasticloadbalancing:DescribeListeners",
           "elasticloadbalancing:DescribeLoadBalancerAttributes",
           "elasticloadbalancing:DescribeTargetGroupAttributes",
+          "elasticloadbalancing:DescribeListenerAttributes",
           "elasticloadbalancing:DescribeTags",
           "acm:DescribeCertificate",
           "acm:ListCertificates",
