@@ -141,3 +141,4 @@ This is a full end-to-end project demonstrating enterprise-grade AWS infrastruct
 # trigger new deployment after codedeploy s3 fix
 # add listbucket permission for codedeploy
 # comprehensive s3 permissions for codedeploy
+# force new deployment with updated codedeploy permissions
