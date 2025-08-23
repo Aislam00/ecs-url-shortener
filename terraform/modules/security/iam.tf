@@ -145,15 +145,6 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
       {
         Effect = "Allow"
         Action = [
-          "kms:GetKeyRotationStatus",
-          "ec2:DescribeVpcAttribute",
-          "ec2:DescribeAddressesAttribute",
-          "ec2:DescribePrefixLists",
-          "kms:ListResourceTags"        ]
-        Resource = "*"      },
-      {
-        Effect = "Allow"
-        Action = [
           "ecr:BatchCheckLayerAvailability",
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
@@ -279,8 +270,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
   })
 }
 
-resource "aws_iam_role_policy" "github_actions_read_permissions" {
-  name_prefix = "${var.name_prefix}-github-read-"
+resource "aws_iam_role_policy" "github_actions_read_all" {
+  name_prefix = "${var.name_prefix}-github-read-all-"
   role        = aws_iam_role.github_actions.id
 
   policy = jsonencode({
@@ -292,32 +283,10 @@ resource "aws_iam_role_policy" "github_actions_read_permissions" {
           "kms:DescribeKey",
           "kms:GetKeyPolicy",
           "kms:ListAliases",
-          "kms:ListKeys"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
+          "kms:ListKeys",
           "kms:GetKeyRotationStatus",
-          "ec2:DescribeVpcAttribute",
-          "ec2:DescribeAddressesAttribute",
-          "ec2:DescribePrefixLists",
-          "kms:ListResourceTags"        ]
-        Resource = "*"      },
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:GetRole",
-          "iam:GetRolePolicy",
-          "iam:ListRolePolicies",
-          "iam:ListAttachedRolePolicies"
-        ]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
+          "kms:ListResourceTags",
+          "kms:Decrypt",
           "ec2:DescribeVpcs",
           "ec2:DescribeSubnets",
           "ec2:DescribeAddresses",
@@ -326,41 +295,52 @@ resource "aws_iam_role_policy" "github_actions_read_permissions" {
           "ec2:DescribeRouteTables",
           "ec2:DescribeSecurityGroups",
           "ec2:DescribeVpcEndpoints",
-          "ec2:DescribeFlowLogs"
+          "ec2:DescribeFlowLogs",
+          "ec2:DescribeVpcAttribute",
+          "ec2:DescribeAddressesAttribute",
+          "ec2:DescribePrefixLists",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeSecurityGroupRules",
+          "s3:GetBucketVersioning",
+          "s3:GetEncryptionConfiguration",
+          "s3:GetBucketPublicAccessBlock", 
+          "s3:GetLifecycleConfiguration",
+          "s3:GetBucketLogging",
+          "s3:GetBucketPolicy",
+          "sns:GetTopicAttributes",
+          "sns:ListTopics",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeListeners",
+          "acm:DescribeCertificate",
+          "acm:ListCertificates",
+          "codedeploy:GetApplication",
+          "codedeploy:GetDeploymentGroup",
+          "ecr:DescribeRepositories",
+          "logs:DescribeLogGroups",
+          "logs:ListTagsForResource",
+          "ecs:DescribeClusters",
+          "dynamodb:DescribeTable",
+          "dynamodb:DescribeContinuousBackups",
+          "iam:GetRole",
+          "iam:GetRolePolicy", 
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:GetOpenIDConnectProvider",
+          "wafv2:GetWebACL",
+          "wafv2:ListTagsForResource"
         ]
         Resource = "*"
       },
       {
         Effect = "Allow"
         Action = [
-          "kms:GetKeyRotationStatus",
-          "ec2:DescribeVpcAttribute",
-          "ec2:DescribeAddressesAttribute",
-          "ec2:DescribePrefixLists",
-          "kms:ListResourceTags"        ]
-        Resource = "*"      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy" "github_actions_comprehensive_read" {
-  name_prefix = "${var.name_prefix}-github-comprehensive-"
-  role        = aws_iam_role.github_actions.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "kms:Decrypt",
-          "dynamodb:DescribeTable",
-          "ec2:DescribeNetworkInterfaces",
-          "logs:DescribeLogGroups",
-          "wafv2:GetWebACL",
-          "wafv2:ListTagsForResource"
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "iam:ListRolePolicies", 
+          "iam:ListAttachedRolePolicies"
         ]
-        Resource = "*"
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-*"
       }
     ]
   })
