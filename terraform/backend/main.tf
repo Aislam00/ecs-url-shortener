@@ -311,3 +311,24 @@ resource "aws_dynamodb_table" "terraform_lock" {
 
   tags = var.tags
 }
+
+resource "aws_s3_bucket_versioning" "terraform_state_replica" {
+  bucket = aws_s3_bucket.terraform_state_replica.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state_replica" {
+  bucket = aws_s3_bucket.terraform_state_replica.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.terraform_state.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_notification" "terraform_state_replica" {
+  bucket = aws_s3_bucket.terraform_state_replica.id
+}

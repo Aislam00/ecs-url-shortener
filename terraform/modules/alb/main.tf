@@ -357,3 +357,27 @@ resource "aws_wafv2_web_acl_association" "main" {
  resource_arn = aws_lb.main.arn
  web_acl_arn  = var.waf_web_acl_arn
 }
+
+resource "aws_s3_bucket_versioning" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.alb_logs.arn
+    }
+  }
+}
+
+resource "aws_s3_bucket_logging" "alb_logs_replica" {
+  bucket = aws_s3_bucket.alb_logs_replica.id
+
+  target_bucket = aws_s3_bucket.alb_logs_access_logs.id
+  target_prefix = "replica-log/"
+}
