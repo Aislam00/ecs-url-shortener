@@ -60,6 +60,8 @@ jobs:
           TF_VAR_container_port: "8080"
           TF_VAR_health_check_path: "/healthz"
           TF_VAR_github_repo: "Aislam00/ecs-url-shortener"
+          TF_VAR_domain_name: "iasolutions.co.uk"
+          TF_VAR_subdomain: "url"
           TF_VAR_tags: '{"Project":"ecs-url-shortener","Environment":"dev","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
         run: |
           cd terraform/envs/dev
