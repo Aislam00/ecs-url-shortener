@@ -141,7 +141,7 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:GetAuthorizationToken"
         ]
         Resource = [
-          "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.name_prefix}-*"
+          "*"
         ]
       },
       {
@@ -573,7 +573,7 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "sns:SetTopicAttributes"
         ]
         Resource = [
-          "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.name_prefix}-*"
+          "*"
         ]
       }
     ]
