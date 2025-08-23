@@ -325,6 +325,7 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "s3:GetBucketLogging",
           "s3:GetBucketPolicy",
           "s3:GetReplicationConfiguration",
+          "s3:GetBucketNotification",
           "sns:GetTopicAttributes",
           "sns:ListTopics",
           "sns:ListTagsForResource",
@@ -333,6 +334,7 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "elasticloadbalancing:DescribeListeners",
           "elasticloadbalancing:DescribeLoadBalancerAttributes",
           "elasticloadbalancing:DescribeTargetGroupAttributes",
+          "elasticloadbalancing:DescribeTags",
           "acm:DescribeCertificate",
           "acm:ListCertificates",
           "acm:ListTagsForCertificate",
@@ -341,12 +343,16 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "codedeploy:ListTagsForResource",
           "ecr:DescribeRepositories",
           "ecr:ListTagsForResource",
+          "ecr:GetLifecyclePolicy",
           "logs:DescribeLogGroups",
           "logs:ListTagsForResource",
           "ecs:DescribeClusters",
           "dynamodb:DescribeTable",
           "dynamodb:DescribeContinuousBackups",
           "dynamodb:DescribeTimeToLive",
+          "dynamodb:ListTagsOfResource",
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets",
           "ssm:DescribeParameters",
           "iam:GetRole",
           "iam:GetRolePolicy", 
@@ -369,9 +375,13 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "iam:GetRole",
           "iam:GetRolePolicy",
           "iam:ListRolePolicies", 
-          "iam:ListAttachedRolePolicies"
+          "iam:ListAttachedRolePolicies",
+          "iam:GetOpenIDConnectProvider"
         ]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-*"
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+        ]
       }
     ]
   })
