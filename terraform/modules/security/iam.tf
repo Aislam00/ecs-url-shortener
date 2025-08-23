@@ -339,6 +339,8 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "s3:DeleteBucketPolicy",
           "s3:PutBucketReplication",
           "s3:DeleteBucketReplication",
+          "s3:PutReplicationConfiguration",
+          "s3:DeleteReplicationConfiguration",
           "s3:CreateBucket",
           "s3:DeleteBucket",
           "sns:GetTopicAttributes",
