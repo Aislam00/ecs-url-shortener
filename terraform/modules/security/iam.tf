@@ -151,7 +151,10 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:PutImage",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
+          "ecr:CompleteLayerUpload",
+          "ecr:DescribeRepositories",
+          "ecr:GetLifecyclePolicy",
+          "ecr:ListTagsForResource"
         ]
         Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.name_prefix}"
       }
@@ -284,7 +287,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "wafv2:*",
           "codedeploy:*",
           "cloudwatch:*",
-          "acm:*"
+          "acm:*",
+          "ecr:*"
         ]
         Resource = "*"
       }
