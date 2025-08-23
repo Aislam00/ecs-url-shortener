@@ -353,6 +353,7 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "dynamodb:ListTagsOfResource",
           "route53:GetHostedZone",
           "route53:ListResourceRecordSets",
+          "wafv2:GetWebACLForResource",
           "ssm:DescribeParameters",
           "iam:GetRole",
           "iam:GetRolePolicy", 
@@ -381,6 +382,18 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.name_prefix}-*",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets",
+          "route53:GetChange"
+        ]
+        Resource = [
+          "arn:aws:route53:::hostedzone/Z06933453Q1O5OQ901X7P",
+          "arn:aws:route53:::change/*"
         ]
       }
     ]

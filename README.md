@@ -108,8 +108,18 @@ https://github.com/user-attachments/assets/6389f46a-ac8c-4002-8f82-61596a04ba13
 4. ECS service deployment
 5. Health check validation
 
+### Continuous Integration
 ![CI Pipeline](screenshots/CI-pipeline.png)
+
+### Continuous Deployment
 ![CD Pipeline](screenshots/CD-pipeline.png)
+
+### CodeDeploy Deployment
+
+![CodeDeploy Multiple Attempts](screenshots/codedeploy-multipleattempts.png)
+*Multiple failed attempts due to S3 path configuration - resolved by fixing deployment artifact paths*
+
+![CodeDeploy Process](screenshots/dz-codedeploy2.png)
 
 ## Monitoring & Operations
 
