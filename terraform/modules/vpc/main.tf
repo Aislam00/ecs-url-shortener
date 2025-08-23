@@ -1,3 +1,51 @@
+data "aws_caller_identity" "current" {}
+
+resource "aws_kms_key" "vpc_flow_log" {
+  description         = "KMS key for VPC flow log encryption"
+  enable_key_rotation = true
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+        Condition = {
+          ArnEquals = {
+            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/vpc/flow-logs/${var.name_prefix}"
+          }
+        }
+      }
+    ]
+  })
+  
+  tags = var.tags
+}
+
+resource "aws_kms_alias" "vpc_flow_log" {
+  name          = "alias/${var.name_prefix}-vpc-flow-log"
+  target_key_id = aws_kms_key.vpc_flow_log.key_id
+}
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -19,7 +67,8 @@ resource "aws_vpc_flow_log" "main" {
 
 resource "aws_cloudwatch_log_group" "vpc_flow_log" {
   name              = "/aws/vpc/flow-logs/${var.name_prefix}"
-  retention_in_days = 7
+  retention_in_days = 365
+  kms_key_id        = aws_kms_key.vpc_flow_log.arn
 
   tags = var.tags
 }
@@ -171,5 +220,3 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index].id
 }
-
-data "aws_caller_identity" "current" {}
