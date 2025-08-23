@@ -84,6 +84,24 @@ resource "aws_iam_role_policy_attachment" "codedeploy_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
 }
 
+resource "aws_iam_role_policy" "codedeploy_s3_access" {
+  name_prefix = "${var.name_prefix}-codedeploy-s3-"
+  role        = aws_iam_role.codedeploy_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = "arn:aws:s3:::${var.name_prefix}-deployments/*"
+      }
+    ]
+  })
+}
+
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_openid_connect_provider" "github" {
