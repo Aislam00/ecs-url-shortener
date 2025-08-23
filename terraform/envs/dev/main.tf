@@ -146,3 +146,10 @@ module "ssm" {
   dynamodb_table_name = module.storage.dynamodb_table_name
   tags                = var.tags
 }
+
+module "deployment" {
+  source = "../../modules/deployment"
+
+  name_prefix = local.name_prefix
+  tags        = var.tags
+}

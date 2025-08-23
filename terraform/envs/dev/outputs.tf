@@ -43,6 +43,6 @@ output "dashboard_url" {
 }
 
 output "deployment_bucket_name" {
-  description = "Name of the deployment bucket"
-  value       = module.storage.deployment_bucket_name
+  description = "Name of the deployment S3 bucket"
+  value       = module.deployment.deployment_bucket_name
 }

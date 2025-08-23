@@ -11,6 +11,11 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'eu-west-2' }}
+  PROJECT_NAME: ${{ vars.PROJECT_NAME || 'ecs-url-shortener' }}
+  ENVIRONMENT: ${{ vars.ENVIRONMENT || 'dev' }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -24,73 +29,77 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: eu-west-2
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Plan
         env:
-          TF_VAR_aws_region: "eu-west-2"
-          TF_VAR_aws_account_id: "475641479654"
-          TF_VAR_project_name: "ecs-url-shortener"
-          TF_VAR_environment: "dev"
-          TF_VAR_vpc_cidr: "10.0.0.0/16"
-          TF_VAR_availability_zones: '["eu-west-2a", "eu-west-2b"]'
-          TF_VAR_private_subnet_cidrs: '["10.0.1.0/24", "10.0.2.0/24"]'
-          TF_VAR_public_subnet_cidrs: '["10.0.101.0/24", "10.0.102.0/24"]'
-          TF_VAR_container_port: "8080"
-          TF_VAR_health_check_path: "/healthz"
-          TF_VAR_github_repo: "Aislam00/ecs-url-shortener"
-          TF_VAR_domain_name: "iasolutions.co.uk"
-          TF_VAR_subdomain: "url"
-          TF_VAR_tags: '{"Project":"ecs-url-shortener","Environment":"dev","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
+          TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          TF_VAR_project_name: ${{ env.PROJECT_NAME }}
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_vpc_cidr: ${{ vars.VPC_CIDR || '10.0.0.0/16' }}
+          TF_VAR_availability_zones: ${{ vars.AVAILABILITY_ZONES || '["eu-west-2a", "eu-west-2b"]' }}
+          TF_VAR_private_subnet_cidrs: ${{ vars.PRIVATE_SUBNET_CIDRS || '["10.0.1.0/24", "10.0.2.0/24"]' }}
+          TF_VAR_public_subnet_cidrs: ${{ vars.PUBLIC_SUBNET_CIDRS || '["10.0.101.0/24", "10.0.102.0/24"]' }}
+          TF_VAR_container_port: ${{ vars.CONTAINER_PORT || '8080' }}
+          TF_VAR_health_check_path: ${{ vars.HEALTH_CHECK_PATH || '/healthz' }}
+          TF_VAR_github_repo: ${{ github.repository }}
+          TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+          TF_VAR_subdomain: ${{ vars.SUBDOMAIN || 'url' }}
+          TF_VAR_tags: '{"Project":"${{ env.PROJECT_NAME }}","Environment":"${{ env.ENVIRONMENT }}","ManagedBy":"terraform","Repository":"${{ github.repository }}"}'
         run: |
-          cd terraform/envs/dev
+          cd terraform/envs/${{ env.ENVIRONMENT }}
           terraform init
           terraform plan
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
         env:
-          TF_VAR_aws_region: "eu-west-2"
-          TF_VAR_aws_account_id: "475641479654"
-          TF_VAR_project_name: "ecs-url-shortener"
-          TF_VAR_environment: "dev"
-          TF_VAR_vpc_cidr: "10.0.0.0/16"
-          TF_VAR_availability_zones: '["eu-west-2a", "eu-west-2b"]'
-          TF_VAR_private_subnet_cidrs: '["10.0.1.0/24", "10.0.2.0/24"]'
-          TF_VAR_public_subnet_cidrs: '["10.0.101.0/24", "10.0.102.0/24"]'
-          TF_VAR_container_port: "8080"
-          TF_VAR_health_check_path: "/healthz"
-          TF_VAR_github_repo: "Aislam00/ecs-url-shortener"
-          TF_VAR_domain_name: "iasolutions.co.uk"
-          TF_VAR_subdomain: "url"
-          TF_VAR_tags: '{"Project":"ecs-url-shortener","Environment":"dev","ManagedBy":"terraform","Owner":"AlaminIslam","CostCenter":"learning"}'
+          TF_VAR_aws_region: ${{ env.AWS_REGION }}
+          TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          TF_VAR_project_name: ${{ env.PROJECT_NAME }}
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_vpc_cidr: ${{ vars.VPC_CIDR || '10.0.0.0/16' }}
+          TF_VAR_availability_zones: ${{ vars.AVAILABILITY_ZONES || '["eu-west-2a", "eu-west-2b"]' }}
+          TF_VAR_private_subnet_cidrs: ${{ vars.PRIVATE_SUBNET_CIDRS || '["10.0.1.0/24", "10.0.2.0/24"]' }}
+          TF_VAR_public_subnet_cidrs: ${{ vars.PUBLIC_SUBNET_CIDRS || '["10.0.101.0/24", "10.0.102.0/24"]' }}
+          TF_VAR_container_port: ${{ vars.CONTAINER_PORT || '8080' }}
+          TF_VAR_health_check_path: ${{ vars.HEALTH_CHECK_PATH || '/healthz' }}
+          TF_VAR_github_repo: ${{ github.repository }}
+          TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
+          TF_VAR_subdomain: ${{ vars.SUBDOMAIN || 'url' }}
+          TF_VAR_tags: '{"Project":"${{ env.PROJECT_NAME }}","Environment":"${{ env.ENVIRONMENT }}","ManagedBy":"terraform","Repository":"${{ github.repository }}"}'
         run: |
-          cd terraform/envs/dev
+          cd terraform/envs/${{ env.ENVIRONMENT }}
           terraform apply -auto-approve
 
-      - name: Wait for infrastructure to be ready
-        run: |
-          echo "Waiting 30 seconds for infrastructure to stabilize..."
-          sleep 30
+      - name: Wait for infrastructure
+        run: sleep 30
 
-      - name: Create deployment package and deploy
+      - name: Get Terraform outputs
+        id: terraform-outputs
+        run: |
+          cd terraform/envs/${{ env.ENVIRONMENT }}
+          echo "deployment_bucket=$(terraform output -raw deployment_bucket_name)" >> $GITHUB_OUTPUT
+          echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+          echo "ecs_cluster_name=$(terraform output -raw ecs_cluster_name)" >> $GITHUB_OUTPUT
+          echo "ecs_service_name=$(terraform output -raw ecs_service_name)" >> $GITHUB_OUTPUT
+          echo "codedeploy_app_name=$(terraform output -raw codedeploy_app_name)" >> $GITHUB_OUTPUT
+          echo "codedeploy_deployment_group_name=$(terraform output -raw codedeploy_deployment_group_name)" >> $GITHUB_OUTPUT
+
+      - name: Deploy application
         if: github.ref == 'refs/heads/main'
         run: |
-          # Get deployment bucket name from Terraform output
-          cd terraform/envs/dev
-          DEPLOYMENT_BUCKET=$(terraform output -raw deployment_bucket_name)
-          cd ../../..
+          CURRENT_TASK_DEF=$(aws ecs describe-services --cluster ${{ steps.terraform-outputs.outputs.ecs_cluster_name }} --services ${{ steps.terraform-outputs.outputs.ecs_service_name }} --region ${{ env.AWS_REGION }} --query 'services[0].taskDefinition' --output text)
           
-          CURRENT_TASK_DEF=$(aws ecs describe-services --cluster ecs-url-shortener-dev --services ecs-url-shortener-dev --region eu-west-2 --query 'services[0].taskDefinition' --output text)
+          aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEF --region ${{ env.AWS_REGION }} --query 'taskDefinition' > task-def.json
           
-          aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEF --region eu-west-2 --query 'taskDefinition' > task-def.json
+          jq --arg IMAGE "${{ steps.terraform-outputs.outputs.ecr_repository_url }}:${{ github.sha }}" '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-def.json > new-task-def.json
           
-          jq --arg IMAGE "475641479654.dkr.ecr.eu-west-2.amazonaws.com/ecs-url-shortener-dev:${{ github.sha }}" '.containerDefinitions[0].image = $IMAGE | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)' task-def.json > new-task-def.json
-          
-          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --region eu-west-2 --query 'taskDefinition.taskDefinitionArn' --output text)
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://new-task-def.json --region ${{ env.AWS_REGION }} --query 'taskDefinition.taskDefinitionArn' --output text)
           echo "New task definition: $NEW_TASK_DEF_ARN"
           
           mkdir deployment-package
@@ -103,20 +112,20 @@ jobs:
                   TaskDefinition: "$NEW_TASK_DEF_ARN"
                   LoadBalancerInfo:
                     ContainerName: "app"
-                    ContainerPort: 8080
+                    ContainerPort: ${{ vars.CONTAINER_PORT || '8080' }}
           EOF
           
           cd deployment-package && zip -r ../deployment.zip . && cd ..
           
-          aws s3 cp deployment.zip s3://$DEPLOYMENT_BUCKET/deployments/deployment-${{ github.sha }}.zip
+          aws s3 cp deployment.zip s3://${{ steps.terraform-outputs.outputs.deployment_bucket }}/deployments/deployment-${{ github.sha }}.zip --region ${{ env.AWS_REGION }}
           
           DEPLOYMENT_ID=$(aws deploy create-deployment \
-            --application-name ecs-url-shortener-dev \
-            --deployment-group-name ecs-url-shortener-dev-deployment-group \
-            --revision "revisionType=S3,s3Location={bucket=$DEPLOYMENT_BUCKET,key=deployments/deployment-${{ github.sha }}.zip,bundleType=zip}" \
-            --region eu-west-2 \
-            --query 'deploymentId' --output text)
+            --application-name ${{ steps.terraform-outputs.outputs.codedeploy_app_name }} \
+            --deployment-group-name ${{ steps.terraform-outputs.outputs.codedeploy_deployment_group_name }} \
+            --revision "revisionType=S3,s3Location={bucket=${{ steps.terraform-outputs.outputs.deployment_bucket }},key=deployments/deployment-${{ github.sha }}.zip,bundleType=zip}" \
+            --region ${{ env.AWS_REGION }} \
+            --query 'deploymentId' \
+            --output text)
           
           echo "CodeDeploy deployment started: $DEPLOYMENT_ID"
-          echo "Monitor at: https://eu-west-2.console.aws.amazon.com/codesuite/codedeploy/deployments/$DEPLOYMENT_ID"
-          echo "Service URL: https://url.iasolutions.co.uk/healthz"
+          echo "Monitor at: https://${{ env.AWS_REGION }}.console.aws.amazon.com/codesuite/codedeploy/deployments/$DEPLOYMENT_ID"
