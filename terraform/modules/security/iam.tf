@@ -341,7 +341,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "ec2:DeleteTags",
           "ec2:DescribeTags",
           "ec2:DescribePrefixLists",
-          "ec2:DescribeFlowLogs",        ]
+          "ec2:DescribeFlowLogs",
+          "ec2:DescribeNetworkInterfaces",        ]
         Resource = "*"
       },
       {
