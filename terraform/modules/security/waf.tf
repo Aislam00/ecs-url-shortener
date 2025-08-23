@@ -1,5 +1,3 @@
-data "aws_caller_identity" "current" {}
-
 resource "aws_cloudwatch_log_group" "waf" {
   name              = "/aws/wafv2/${var.name_prefix}"
   retention_in_days = 365
@@ -52,8 +50,30 @@ resource "aws_wafv2_web_acl" "main" {
   }
 
   rule {
-    name     = "AWSManagedRulesCommonRuleSet"
+    name     = "AWSManagedRulesKnownBadInputsRuleSet"
     priority = 1
+
+    override_action {
+      none {}
+    }
+
+    statement {
+      managed_rule_group_statement {
+        name        = "AWSManagedRulesKnownBadInputsRuleSet"
+        vendor_name = "AWS"
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                 = "${var.name_prefix}-KnownBadInputsRuleSet"
+      sampled_requests_enabled    = true
+    }
+  }
+
+  rule {
+    name     = "AWSManagedRulesCommonRuleSet"
+    priority = 2
 
     override_action {
       none {}
@@ -69,35 +89,6 @@ resource "aws_wafv2_web_acl" "main" {
     visibility_config {
       cloudwatch_metrics_enabled = true
       metric_name                 = "${var.name_prefix}-CommonRuleSetMetric"
-      sampled_requests_enabled    = true
-    }
-  }
-
-  rule {
-    name     = "AWSManagedRulesKnownBadInputsRuleSet"
-    priority = 2
-
-    override_action {
-      none {}
-    }
-
-    statement {
-      managed_rule_group_statement {
-        name        = "AWSManagedRulesKnownBadInputsRuleSet"
-        vendor_name = "AWS"
-
-        rule_action_override {
-          action_to_use {
-            block {}
-          }
-          name = "Log4JRCE"
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                 = "${var.name_prefix}-KnownBadInputsMetric"
       sampled_requests_enabled    = true
     }
   }
