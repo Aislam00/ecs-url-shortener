@@ -354,6 +354,7 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "dynamodb:ListTagsOfResource",
           "route53:GetHostedZone",
           "route53:ListResourceRecordSets",
+          "route53:ListHostedZones",
           "wafv2:GetWebACLForResource",
           "ssm:DescribeParameters",
           "iam:GetRole",
