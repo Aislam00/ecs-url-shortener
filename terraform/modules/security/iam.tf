@@ -147,8 +147,9 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Action = [
           "kms:GetKeyRotationStatus",
           "ec2:DescribeVpcAttribute",
-          "ec2:DescribeAddressesAttribute"
-        ]
+          "ec2:DescribeAddressesAttribute",
+          "ec2:DescribePrefixLists",
+          "kms:ListResourceTags"        ]
         Resource = "*"      },
       {
         Effect = "Allow"
@@ -300,8 +301,9 @@ resource "aws_iam_role_policy" "github_actions_read_permissions" {
         Action = [
           "kms:GetKeyRotationStatus",
           "ec2:DescribeVpcAttribute",
-          "ec2:DescribeAddressesAttribute"
-        ]
+          "ec2:DescribeAddressesAttribute",
+          "ec2:DescribePrefixLists",
+          "kms:ListResourceTags"        ]
         Resource = "*"      },
       {
         Effect = "Allow"
@@ -333,8 +335,9 @@ resource "aws_iam_role_policy" "github_actions_read_permissions" {
         Action = [
           "kms:GetKeyRotationStatus",
           "ec2:DescribeVpcAttribute",
-          "ec2:DescribeAddressesAttribute"
-        ]
+          "ec2:DescribeAddressesAttribute",
+          "ec2:DescribePrefixLists",
+          "kms:ListResourceTags"        ]
         Resource = "*"      }
     ]
   })
