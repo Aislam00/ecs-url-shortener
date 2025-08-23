@@ -140,7 +140,9 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Action = [
           "ecr:GetAuthorizationToken"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.name_prefix}-*"
+        ]
       },
       {
         Effect = "Allow"
@@ -332,6 +334,9 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "ec2:AllocateAddress",
           "ec2:ReleaseAddress",
           "ec2:DescribeAddresses",
+          "ec2:DescribeAddressesAttribute",
+          "ec2:DescribeVpcAttribute",
+          "ec2:ModifyVpcAttribute",
           "ec2:CreateTags",
           "ec2:DeleteTags",
           "ec2:DescribeTags"
@@ -389,7 +394,8 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "logs:PutRetentionPolicy",
           "logs:TagLogGroup",
           "logs:UntagLogGroup",
-          "logs:ListTagsLogGroup"
+          "logs:ListTagsLogGroup",
+          "logs:ListTagsForResource"
         ]
         Resource = "*"
       },
@@ -542,9 +548,33 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "s3:GetBucketPublicAccessBlock",
           "s3:PutBucketPublicAccessBlock",
           "s3:GetBucketTagging",
-          "s3:PutBucketTagging"
+          "s3:PutBucketTagging",
+          "s3:GetBucketReplication",
+          "s3:PutBucketReplication",
+          "s3:GetBucketNotification",
+          "s3:PutBucketNotification"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:s3:::${var.name_prefix}-*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:CreateTopic",
+          "sns:DeleteTopic",
+          "sns:GetTopicAttributes",
+          "sns:SetTopicAttributes",
+          "sns:ListTopics",
+          "sns:TagResource",
+          "sns:UntagResource",
+          "sns:ListTagsForResource",
+          "sns:GetTopicAttributes",
+          "sns:SetTopicAttributes"
+        ]
+        Resource = [
+          "arn:aws:sns:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${var.name_prefix}-*"
+        ]
       }
     ]
   })
