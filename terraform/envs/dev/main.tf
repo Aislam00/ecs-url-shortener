@@ -32,6 +32,7 @@ module "vpc" {
   availability_zones   = var.availability_zones
   private_subnet_cidrs = var.private_subnet_cidrs
   public_subnet_cidrs  = var.public_subnet_cidrs
+  aws_region           = var.aws_region
   tags                 = var.tags
 }
 
@@ -97,7 +98,7 @@ module "ecs" {
   ecs_task_role_arn      = module.security.ecs_task_role_arn
   private_subnet_ids     = module.vpc.private_subnet_ids
   ecs_security_group_id  = module.security.ecs_security_group_id
-  target_group_blue_arn  = module.alb.target_group_blue_arn
+  target_group_blue_arn  = module.alb.blue_target_group_arn
   https_listener_arn     = module.alb.https_listener_arn
   tags                   = var.tags
 }
@@ -107,8 +108,8 @@ module "codedeploy" {
 
   name_prefix             = local.name_prefix
   codedeploy_role_arn     = module.security.codedeploy_role_arn
-  target_group_blue_name  = module.alb.target_group_blue_name
-  target_group_green_name = module.alb.target_group_green_name
+  target_group_blue_name  = module.alb.blue_target_group_arn
+  target_group_green_name = module.alb.green_target_group_arn
   https_listener_arn      = module.alb.https_listener_arn
   ecs_cluster_name        = module.ecs.ecs_cluster_name
   ecs_service_name        = module.ecs.ecs_service_name
@@ -133,8 +134,8 @@ module "monitoring" {
   aws_region        = var.aws_region
   ecs_service_name  = module.ecs.ecs_service_name
   ecs_cluster_name  = module.ecs.ecs_cluster_name
-  alb_name          = module.alb.alb_name
-  target_group_name = module.alb.target_group_blue_name
+  alb_name          = module.alb.alb_dns_name
+  target_group_name = module.alb.blue_target_group_arn
   tags              = var.tags
 }
 

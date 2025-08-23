@@ -11,14 +11,6 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  egress {
-    description     = "Traffic to ECS containers"
-    from_port       = var.container_port
-    to_port         = var.container_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs.id]
-  }
-
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-alb-sg"
   })
@@ -48,4 +40,15 @@ resource "aws_security_group" "ecs" {
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-ecs-sg"
   })
+}
+
+# Add the ALB egress rule separately to avoid circular dependency
+resource "aws_security_group_rule" "alb_to_ecs" {
+  type                     = "egress"
+  from_port                = var.container_port
+  to_port                  = var.container_port
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.ecs.id
+  security_group_id        = aws_security_group.alb.id
+  description              = "Traffic to ECS containers"
 }

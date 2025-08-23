@@ -1,23 +1,32 @@
 variable "name_prefix" {
-  type = string
+ description = "Name prefix for resources"
+ type        = string
 }
 
 variable "vpc_cidr" {
-  type = string
-}
-
-variable "availability_zones" {
-  type = list(string)
-}
-
-variable "private_subnet_cidrs" {
-  type = list(string)
+ description = "CIDR block for VPC"
+ type        = string
 }
 
 variable "public_subnet_cidrs" {
-  type = list(string)
+ description = "CIDR blocks for public subnets"
+ type        = list(string)
+}
+
+variable "private_subnet_cidrs" {
+ description = "CIDR blocks for private subnets"
+ type        = list(string)
+}
+
+variable "availability_zones" {
+ description = "Availability zones"
+ type        = list(string)
 }
 
 variable "tags" {
-  type = map(string)
+ type = map(string)
+}
+
+variable "aws_region" {
+ type = string
 }

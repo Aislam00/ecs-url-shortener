@@ -227,7 +227,7 @@ resource "aws_s3_bucket_replication_configuration" "alb_logs_access_logs" {
 }
 
 resource "aws_iam_role" "alb_logs_replication" {
-  name_prefix = "${var.name_prefix}-alb-logs-replication-"
+  name_prefix = "${var.name_prefix}-replication-"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -244,7 +244,7 @@ resource "aws_iam_role" "alb_logs_replication" {
 }
 
 resource "aws_iam_role_policy" "alb_logs_replication" {
-  name_prefix = "${var.name_prefix}-alb-logs-replication-"
+  name_prefix = "${var.name_prefix}-replication-"
   role        = aws_iam_role.alb_logs_replication.id
 
   policy = jsonencode({
@@ -295,7 +295,7 @@ resource "aws_lb" "main" {
 
  access_logs {
    bucket  = aws_s3_bucket.alb_logs.bucket
-   enabled = true
+   enabled = false
  }
 
  tags = var.tags
