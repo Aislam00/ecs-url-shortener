@@ -352,9 +352,6 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
           "dynamodb:DescribeContinuousBackups",
           "dynamodb:DescribeTimeToLive",
           "dynamodb:ListTagsOfResource",
-          "route53:GetHostedZone",
-          "route53:ListResourceRecordSets",
-          "route53:ListHostedZones",
           "wafv2:GetWebACLForResource",
           "ssm:DescribeParameters",
           "iam:GetRole",
@@ -375,6 +372,15 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
       {
         Effect = "Allow"
         Action = [
+          "route53:GetHostedZone",
+          "route53:ListResourceRecordSets",
+          "route53:ListHostedZones"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "iam:GetRole",
           "iam:GetRolePolicy",
           "iam:ListRolePolicies", 
@@ -389,14 +395,9 @@ resource "aws_iam_role_policy" "github_actions_read_all" {
       {
         Effect = "Allow"
         Action = [
-          "route53:GetHostedZone",
-          "route53:ListResourceRecordSets",
           "route53:GetChange"
         ]
-        Resource = [
-          "arn:aws:route53:::hostedzone/Z06933453Q1O5OQ901X7P",
-          "arn:aws:route53:::change/*"
-        ]
+        Resource = "arn:aws:route53:::change/*"
       }
     ]
   })
