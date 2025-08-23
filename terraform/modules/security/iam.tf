@@ -339,8 +339,9 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
           "ec2:ModifyVpcAttribute",
           "ec2:CreateTags",
           "ec2:DeleteTags",
-          "ec2:DescribeTags"
-        ]
+          "ec2:DescribeTags",
+          "ec2:DescribePrefixLists",
+          "ec2:DescribeFlowLogs",        ]
         Resource = "*"
       },
       {
