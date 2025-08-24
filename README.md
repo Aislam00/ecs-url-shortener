@@ -109,7 +109,7 @@ https://github.com/user-attachments/assets/6389f46a-ac8c-4002-8f82-61596a04ba13
 5. Health check validation
 
 ### Continuous Integration
-![CI Pipeline](screenshots/CI-pipeline.png)
+![CI Pipeline](screenshots/ecs-ci.png)
 
 ### Continuous Deployment
 ![CD Pipeline](screenshots/CD-pipeline.png)
@@ -130,15 +130,11 @@ https://github.com/user-attachments/assets/6389f46a-ac8c-4002-8f82-61596a04ba13
 - Comprehensive logging to CloudWatch Logs
 
 ### CloudWatch Dashboard
-![CloudWatch Dashboard](screenshots/cloudwatch-dashboard.png)
+![CloudWatch Dashboard](screenshots/cloudwatch-ecs.png)
 
 ### ECS Health
 ![ECS Health](screenshots/ecs-dashboard.png)
 
 ## Project Overview
 
-This is a full end-to-end project demonstrating enterprise-grade AWS infrastructure patterns including containerized microservices, Infrastructure as Code, automated CI/CD pipelines, security best practices, and production monitoring. The platform showcases real-world ECS operations with scalable, cost-optimized architecture.# fixed ecr policy resource
-# trigger new deployment after codedeploy s3 fix
-# add listbucket permission for codedeploy
-# comprehensive s3 permissions for codedeploy
-# force new deployment with updated codedeploy permissions
+This is a full end-to-end project demonstrating enterprise-grade AWS infrastructure patterns including containerized microservices, Infrastructure as Code, automated CI/CD pipelines, security best practices, and production monitoring. The platform showcases real-world ECS operations with scalable, cost-optimized architecture.

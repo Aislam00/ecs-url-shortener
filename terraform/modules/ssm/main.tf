@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 resource "aws_kms_key" "ssm" {
   description         = "KMS key for SSM parameter encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -18,7 +18,7 @@ resource "aws_kms_key" "ssm" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 

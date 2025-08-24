@@ -23,7 +23,7 @@ locals {
   name_prefix = "${var.project_name}-global"
 }
 
-random_id "bucket_suffix" {
+resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
 
@@ -32,7 +32,7 @@ data "aws_caller_identity" "current" {}
 resource "aws_kms_key" "terraform_state" {
   description         = "KMS key for Terraform state encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -47,7 +47,7 @@ resource "aws_kms_key" "terraform_state" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 
@@ -59,7 +59,7 @@ resource "aws_kms_alias" "terraform_state" {
 resource "aws_kms_key" "dynamodb_lock" {
   description         = "KMS key for DynamoDB lock table encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -74,7 +74,7 @@ resource "aws_kms_key" "dynamodb_lock" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 
@@ -190,7 +190,7 @@ resource "aws_iam_role_policy" "terraform_state_replication" {
           "s3:ReplicateObject",
           "s3:ReplicateDelete"
         ]
-        Effect = "Allow"
+        Effect   = "Allow"
         Resource = "${aws_s3_bucket.terraform_state_replica.arn}/*"
       }
     ]
@@ -230,10 +230,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state_logs" {
     id     = "cleanup"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 90
     }
-    
+
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
     }
@@ -253,6 +255,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
   rule {
     id     = "cleanup"
     status = "Enabled"
+
+    filter {}
 
     noncurrent_version_expiration {
       noncurrent_days = 90
@@ -340,10 +344,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state_replica" {
     id     = "cleanup"
     status = "Enabled"
 
+    filter {}
+
     expiration {
       days = 90
     }
-    
+
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
     }

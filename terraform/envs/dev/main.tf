@@ -108,8 +108,8 @@ module "codedeploy" {
 
   name_prefix             = local.name_prefix
   codedeploy_role_arn     = module.security.codedeploy_role_arn
-  target_group_blue_name  = module.alb.blue_target_group_arn
-  target_group_green_name = module.alb.green_target_group_arn
+  target_group_blue_name  = module.alb.blue_target_group_name
+  target_group_green_name = module.alb.green_target_group_name
   https_listener_arn      = module.alb.https_listener_arn
   ecs_cluster_name        = module.ecs.ecs_cluster_name
   ecs_service_name        = module.ecs.ecs_service_name
@@ -135,7 +135,7 @@ module "monitoring" {
   ecs_service_name  = module.ecs.ecs_service_name
   ecs_cluster_name  = module.ecs.ecs_cluster_name
   alb_name          = module.alb.alb_dns_name
-  target_group_name = module.alb.blue_target_group_arn
+  target_group_name = module.alb.blue_target_group_name
   tags              = var.tags
 }
 

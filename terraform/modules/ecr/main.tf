@@ -1,7 +1,7 @@
 resource "aws_kms_key" "ecr" {
-  description             = "KMS key for ECR encryption"
-  enable_key_rotation     = true
-  
+  description         = "KMS key for ECR encryption"
+  enable_key_rotation = true
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -16,7 +16,7 @@ resource "aws_kms_key" "ecr" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 
@@ -26,9 +26,9 @@ resource "aws_kms_alias" "ecr" {
 }
 
 resource "aws_kms_key" "logs" {
-  description             = "KMS key for CloudWatch logs encryption"
-  enable_key_rotation     = true
-  
+  description         = "KMS key for CloudWatch logs encryption"
+  enable_key_rotation = true
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -57,7 +57,7 @@ resource "aws_kms_key" "logs" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 

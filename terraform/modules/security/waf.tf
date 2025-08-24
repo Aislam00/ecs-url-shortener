@@ -8,7 +8,7 @@ resource "aws_cloudwatch_log_group" "waf" {
 resource "aws_kms_key" "waf" {
   description         = "KMS key for WAF logs encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -37,7 +37,7 @@ resource "aws_kms_key" "waf" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 
@@ -66,15 +66,15 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                 = "${var.name_prefix}-KnownBadInputsRuleSet"
-      sampled_requests_enabled    = true
+      metric_name                = "${var.name_prefix}-KnownBadInputsRuleSet"
+      sampled_requests_enabled   = true
     }
   }
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                 = "${var.name_prefix}-WebACL"
-    sampled_requests_enabled    = true
+    metric_name                = "${var.name_prefix}-WebACL"
+    sampled_requests_enabled   = true
   }
 
   tags = var.tags

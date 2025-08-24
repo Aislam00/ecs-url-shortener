@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 resource "aws_kms_key" "vpc_flow_log" {
   description         = "KMS key for VPC flow log encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -32,7 +32,7 @@ resource "aws_kms_key" "vpc_flow_log" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 
@@ -41,7 +41,12 @@ resource "aws_kms_alias" "vpc_flow_log" {
   target_key_id = aws_kms_key.vpc_flow_log.key_id
 }
 
+data "aws_cloudwatch_log_group" "vpc_flow_log_existing" {
+  name = "/aws/vpc/flow-logs/${var.name_prefix}"
+}
+
 resource "aws_cloudwatch_log_group" "vpc_flow_log" {
+  count             = length(data.aws_cloudwatch_log_group.vpc_flow_log_existing.name) > 0 ? 0 : 1
   name              = "/aws/vpc/flow-logs/${var.name_prefix}"
   retention_in_days = 365
   kms_key_id        = aws_kms_key.vpc_flow_log.arn
@@ -102,12 +107,12 @@ resource "aws_vpc" "main" {
 
 resource "aws_flow_log" "main" {
   iam_role_arn    = aws_iam_role.flow_log.arn
-  log_destination = aws_cloudwatch_log_group.vpc_flow_log.arn
+  log_destination = length(aws_cloudwatch_log_group.vpc_flow_log) > 0 ? aws_cloudwatch_log_group.vpc_flow_log[0].arn : data.aws_cloudwatch_log_group.vpc_flow_log_existing.arn
   traffic_type    = "ALL"
   vpc_id          = aws_vpc.main.id
 
   depends_on = [aws_vpc.main]
-  tags = var.tags
+  tags       = var.tags
 }
 
 resource "aws_default_security_group" "default" {

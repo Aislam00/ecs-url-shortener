@@ -5,7 +5,7 @@ data "aws_elb_service_account" "main" {}
 resource "aws_kms_key" "alb_logs" {
   description         = "KMS key for ALB logs encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -20,14 +20,14 @@ resource "aws_kms_key" "alb_logs" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 
 resource "aws_kms_key" "sns" {
   description         = "KMS key for SNS topics encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -56,7 +56,7 @@ resource "aws_kms_key" "sns" {
       }
     ]
   })
-  
+
   tags = var.tags
 }
 
@@ -197,7 +197,7 @@ resource "aws_iam_role_policy" "alb_logs_replication" {
           "s3:ReplicateObject",
           "s3:ReplicateDelete"
         ]
-        Effect = "Allow"
+        Effect   = "Allow"
         Resource = "arn:aws:s3:::${var.name_prefix}-alb-logs-replica/*"
       }
     ]
@@ -231,12 +231,14 @@ resource "aws_lb_target_group" "blue" {
     matcher             = "200"
     path                = var.health_check_path
     port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
+    protocol            = "HTTPS"
+    timeout             = 10
+    unhealthy_threshold = 3
   }
 
   tags = var.tags
+
+  depends_on = [aws_lb.main]
 }
 
 resource "aws_lb_target_group" "green" {
@@ -253,9 +255,29 @@ resource "aws_lb_target_group" "green" {
     matcher             = "200"
     path                = var.health_check_path
     port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
+    protocol            = "HTTPS"
+    timeout             = 10
+    unhealthy_threshold = 3
+  }
+
+  tags = var.tags
+
+  depends_on = [aws_lb.main]
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 
   tags = var.tags
@@ -269,11 +291,21 @@ resource "aws_lb_listener" "https" {
   certificate_arn   = var.certificate_arn
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.blue.arn
+    type = "forward"
+    forward {
+      target_group {
+        arn = aws_lb_target_group.blue.arn
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [default_action]
   }
 
   tags = var.tags
+
+  depends_on = [aws_lb_target_group.blue, aws_lb_target_group.green]
 }
 
 resource "aws_wafv2_web_acl_association" "main" {

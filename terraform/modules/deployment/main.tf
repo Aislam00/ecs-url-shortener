@@ -1,21 +1,21 @@
 resource "aws_s3_bucket" "deployment_bucket" {
   bucket        = "${var.name_prefix}-deployments"
   force_destroy = true
-  
+
   tags = var.tags
 }
 
 resource "aws_s3_bucket" "access_logs" {
   bucket        = "${var.name_prefix}-deployment-access-logs"
   force_destroy = true
-  
+
   tags = var.tags
 }
 
 resource "aws_s3_bucket" "deployment_replica" {
   bucket        = "${var.name_prefix}-deployments-replica"
   force_destroy = true
-  
+
   tags = var.tags
 }
 
@@ -24,7 +24,7 @@ data "aws_caller_identity" "current" {}
 resource "aws_kms_key" "deployment_bucket" {
   description         = "KMS key for deployment bucket encryption"
   enable_key_rotation = true
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -206,62 +206,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
     abort_incomplete_multipart_upload {
       days_after_initiation = 1
     }
-  }
-}
-
-resource "aws_sns_topic" "s3_notifications" {
-  name_prefix = "${var.name_prefix}-s3-notifications-"
-  
-  kms_master_key_id = aws_kms_key.deployment_bucket.arn
-}
-
-resource "aws_sns_topic_policy" "s3_notifications" {
-  arn = aws_sns_topic.s3_notifications.arn
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "s3.amazonaws.com"
-        }
-        Action   = "SNS:Publish"
-        Resource = aws_sns_topic.s3_notifications.arn
-        Condition = {
-          StringEquals = {
-            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
-          }
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_s3_bucket_notification" "deployment_bucket" {
-  bucket = aws_s3_bucket.deployment_bucket.id
-
-  topic {
-    topic_arn = aws_sns_topic.s3_notifications.arn
-    events    = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
-  }
-}
-
-resource "aws_s3_bucket_notification" "access_logs" {
-  bucket = aws_s3_bucket.access_logs.id
-
-  topic {
-    topic_arn = aws_sns_topic.s3_notifications.arn
-    events    = ["s3:ObjectCreated:*"]
-  }
-}
-
-resource "aws_s3_bucket_notification" "deployment_replica" {
-  bucket = aws_s3_bucket.deployment_replica.id
-
-  topic {
-    topic_arn = aws_sns_topic.s3_notifications.arn
-    events    = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
   }
 }
 
